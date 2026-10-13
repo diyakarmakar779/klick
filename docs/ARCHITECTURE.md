@@ -177,8 +177,8 @@ erDiagram
 1. `GET /v1/sources/luma_mcp/start` discovers Luma's OAuth server from `mcp.luma.com`, creates a PKCE verifier and a one-time state (stored 10 minutes in `oauthStates`, bound to the member), and returns Luma's sign-in URL.
 2. Luma has no client registration. Our `client_id` is the URL `PUBLIC_API_URL/oauth/luma-client.json`, a public JSON document listing our name and redirect URIs, which Luma fetches.
 3. The member signs in on Luma and is sent back to the web app with a code. `POST /v1/sources/luma_mcp/callback` checks the state, swaps the code for a token, opens an MCP session, lists tools, calls the read-only "my events" tool (upcoming and past), maps the results and drops the token.
-4. Luma documents capabilities but not tool names or output fields, so the tool is picked at runtime and the mapping accepts Luma's API shapes. `npm run luma:inspect` signs in from a laptop and prints the real tools and a sample output; `LUMA_EVENTS_TOOL` and `LUMA_EVENTS_TOOL_ARGS` pin the choice.
-5. States: host role → host; approved → registered; invited, pending or waitlist → invited; a `checked_in_at` → attended (with a `checkin:` reference); declined → skipped; no status → unknown.
+4. Luma documents capabilities but not tool names or output fields, so the tool is picked at runtime (preferring `list_events`) and the mapping accepts Luma's API shapes. `npm run luma:inspect` signs in from a laptop and prints the real tools and a sample output; `LUMA_EVENTS_TOOL` and `LUMA_EVENTS_TOOL_ARGS` pin the choice.
+5. Confirmed against Luma on 13 Oct 2026: the tool is `list_events` (`period: future | past`, `cursor` paging), and each entry carries `guest_info.approval_status` and `host_info`. States: `host_info` present → host; `approved` → registered; `invited` → invited; `pending_approval`, `waitlist` or `session` → unknown (Luma's word kept in `rawState`); `declined` → skipped; a check-in timestamp, if Luma ever returns one → attended. Meeting links in `virtual_info` are never stored.
 
 ## 6. AI design
 

@@ -203,10 +203,12 @@ function mapEntry(entry: Obj): ImportedEvent | "skip" | null {
   const start = str(first(ev, "start_at", "startsAt", "start_time", "start"));
   if (!id || !title || !start || Number.isNaN(Date.parse(start))) return null;
 
-  const guest = isObj(entry.guest) ? entry.guest : isObj(entry.registration) ? entry.registration : entry;
+  // Luma's list_events (seen 13 Oct 2026) puts my status in guest_info and fills host_info when I host.
+  const guest = [entry.guest_info, entry.guest, entry.registration].find(isObj) ?? entry;
   const state = lumaState(entry, guest);
   if (!state) return "skip"; // declined: skip, same as Calendar
-  const geo = isObj(ev.geo_address_json) ? ev.geo_address_json : isObj(ev.location) ? ev.location : {};
+  const geo = [ev.geo_address_info, ev.geo_address_json, ev.location].find(isObj) ?? {};
+  const address = str(first(geo, "full_address", "address", "name"));
   const end = str(first(ev, "end_at", "endsAt", "end_time", "end"));
   const checkedIn = str(first(guest, "checked_in_at", "check_in_at"));
   const count = first(ev, "guest_count", "guests_count", "going_count");
@@ -219,21 +221,28 @@ function mapEntry(entry: Obj): ImportedEvent | "skip" | null {
     endsAt: end && !Number.isNaN(Date.parse(end)) ? new Date(end) : null,
     timezone: str(ev.timezone),
     venue: {
-      name: str(first(geo, "address", "full_address", "name")) ?? str(ev.location_name),
+      // A bare maps link isn't a venue name; meeting links are never stored.
+      name: (address && !/^https?:\/\//.test(address) ? address : null) ?? str(ev.location_name),
       city: str(first(geo, "city", "city_state")),
-      online: !!str(first(ev, "meeting_url", "zoom_meeting_url")) && !str(first(geo, "address", "full_address")),
+      online: typeof ev.location_type === "string" ? ev.location_type !== "offline" : !address,
     },
     url: str(ev.url) ?? (str(ev.slug) ? `https://lu.ma/${ev.slug}` : null),
     category: str(first(ev, "category", "event_type")),
     tags: Array.isArray(tags) ? tags.map((t) => (isObj(t) ? str(t.name) : str(t))).filter((t): t is string => !!t) : [],
     coverImageUrl: str(first(ev, "cover_url", "cover_image_url")),
-    organizerName: str(first(ev, "calendar_name", "organizer_name")) ?? hostName(ev),
+    organizerName: calendarName(ev) ?? str(first(ev, "calendar_name", "organizer_name")) ?? hostName(ev),
     guestCount: typeof count === "number" ? count : null,
     state,
     stateRef: checkedIn ? `checkin:${id}` : undefined,
-    rawState: str(first(guest, "approval_status", "status", "registration_status")) ?? str(entry.role) ?? undefined,
+    rawState: str(first(guest, "approval_status", "status", "registration_status")) ?? str(entry.role) ?? (isObj(entry.host_info) ? "host" : undefined),
     confidence: state === "unknown" ? 0.3 : 0.95,
   };
+}
+
+// The event's calendar is the organizer, unless it's someone's "Personal" calendar.
+function calendarName(ev: Obj): string | null {
+  const name = isObj(ev.calendar) ? str(ev.calendar.name) : null;
+  return name && name.toLowerCase() !== "personal" ? name : null;
 }
 
 function hostName(ev: Obj): string | null {
@@ -244,11 +253,13 @@ function hostName(ev: Obj): string | null {
 // Luma guest status -> our states. A check-in timestamp is the only "attended" signal (rule R7).
 function lumaState(entry: Obj, guest: Obj): MembershipState | null {
   const role = String(first(entry, "role", "user_role") ?? "").toLowerCase();
-  if (/host|organizer|manager|admin/.test(role) || entry.is_host === true) return "host";
+  if (/host|organizer|manager|admin/.test(role) || entry.is_host === true || isObj(entry.host_info)) return "host";
   if (str(first(guest, "checked_in_at", "check_in_at"))) return "attended";
   const s = String(first(guest, "approval_status", "status", "registration_status") ?? "").toLowerCase();
   if (/declined|rejected|cancel/.test(s)) return null;
   if (/approved|going|registered|accepted|confirmed/.test(s)) return "registered";
-  if (/invited|pending|waitlist/.test(s)) return "invited";
+  if (/^invited$/.test(s)) return "invited";
+  // pending_approval, waitlist, session: asked or queued but not confirmed, and not an invitation either.
+  // Kept as unknown (rawState holds Luma's word) so we never show a wording that isn't true.
   return "unknown"; // no status from Luma: show nothing rather than guess
 }
