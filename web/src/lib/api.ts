@@ -38,8 +38,27 @@ export const Api = {
     api<{ url: string; state: string }>(`/v1/sources/luma_mcp/start?redirectUri=${encodeURIComponent(redirectUri)}`),
   lumaCallback: (code: string, state: string) =>
     api<{ imported: number }>("/v1/sources/luma_mcp/callback", { method: "POST", body: { code, state } }),
-  events: () => api<unknown[]>("/v1/events"),
-  matches: (eventId: string) => api<{ ai: boolean; matches: unknown[] }>(`/v1/events/${eventId}/matches`),
+  events: () => api<MyEvent[]>("/v1/events"),
+  joinDemoEvents: () => api<{ imported: number }>("/v1/sources/mock_luma/connect", { method: "POST" }),
+  setVisibility: (eventId: string, visibility: "hidden" | "confirmed_attendees" | "connections" | null) =>
+    api(`/v1/events/${eventId}/visibility`, { method: "PUT", body: { visibility } }),
+  matches: (eventId: string) => api<{ ai: boolean; matches: Match[] }>(`/v1/events/${eventId}/matches`),
   createQr: (eventId: string | null) => api<{ token: string; expiresAt: string }>("/v1/qr", { method: "POST", body: { eventId } }),
   previewQr: (token: string) => api(`/v1/qr/${token}`),
 };
+
+export interface MyEvent {
+  event: { id: string; title: string; startsAt: string };
+  state: string;
+  label: string | null;
+  effectiveVisibility: string;
+}
+
+export interface Match {
+  memberId: string;
+  score: number;
+  reason: string;
+  starter: string;
+  source: "gemini" | "overlap";
+  profile?: { displayName: string; headline: string };
+}
