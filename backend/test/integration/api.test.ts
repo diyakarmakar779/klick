@@ -280,6 +280,26 @@ describe("onboarding", () => {
     expect(done.questionnaire.lookingFor).toContain("co-founder");
   });
 
+  it("LinkedIn sign-in uses a server-made, one-use state and an allowed return address", async () => {
+    await call("diya", "PUT", "/v1/me", {});
+    process.env.WEB_URL = "https://hey-os.web.app";
+    delete process.env.LINKEDIN_CLIENT_ID;
+    const cb = encodeURIComponent("https://hey-os.web.app/connect/linkedin/callback");
+    expect((await call("diya", "GET", `/v1/onboarding/linkedin/start?redirectUri=${cb}`)).status).toBe(503);
+    process.env.LINKEDIN_CLIENT_ID = "li-client";
+    const bad = encodeURIComponent("https://evil.example/cb");
+    expect((await call("diya", "GET", `/v1/onboarding/linkedin/start?redirectUri=${bad}`)).status).toBe(400);
+    const start = (await call("diya", "GET", `/v1/onboarding/linkedin/start?redirectUri=${cb}`)).body;
+    expect(new URL(start.url).searchParams.get("state")).toBe(start.state);
+    expect(new URL(start.url).searchParams.get("redirect_uri")).toBe("https://hey-os.web.app/connect/linkedin/callback");
+    // Someone else can't finish Diya's sign-in, and a made-up state is refused.
+    await call("eve", "PUT", "/v1/me", {});
+    expect((await call("eve", "POST", "/v1/onboarding/linkedin/callback", { code: "c", state: start.state })).status).toBe(400);
+    expect((await call("diya", "POST", "/v1/onboarding/linkedin/callback", { code: "c", state: "made-up-state" })).status).toBe(400);
+    delete process.env.LINKEDIN_CLIENT_ID;
+    delete process.env.WEB_URL;
+  });
+
   it("saying 'not me' discards the LinkedIn data", async () => {
     await call("diya", "PUT", "/v1/me", { displayName: "Diya" });
     await setLinkedInCandidate("diya", { sub: "li-999", name: "Someone Else" }, "diya@execora.in");

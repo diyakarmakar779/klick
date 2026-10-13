@@ -55,8 +55,11 @@ gcloud secrets describe job-secret >/dev/null 2>&1 || \
 echo "==> LinkedIn sign-in secrets (optional; create an app at https://www.linkedin.com/developers/apps"
 echo "    with the 'Sign In with LinkedIn using OpenID Connect' product, then re-run with these set)"
 if [[ -n "${LINKEDIN_CLIENT_ID:-}" && -n "${LINKEDIN_CLIENT_SECRET:-}" ]]; then
-  gcloud secrets describe linkedin-client-secret >/dev/null 2>&1 || \
+  if gcloud secrets describe linkedin-client-secret >/dev/null 2>&1; then
+    printf %s "$LINKEDIN_CLIENT_SECRET" | gcloud secrets versions add linkedin-client-secret --data-file=- >/dev/null
+  else
     printf %s "$LINKEDIN_CLIENT_SECRET" | gcloud secrets create linkedin-client-secret --data-file=- --replication-policy=automatic
+  fi
 fi
 
 echo "==> Firebase (Auth) on the same project"
@@ -71,9 +74,10 @@ echo "==> Firestore rules and indexes"
 ( cd "$(dirname "$0")/../backend" && npx -y firebase-tools deploy --only firestore --project "$PROJECT_ID" )
 
 echo "==> Deploy API to Cloud Run"
+# --update-env-vars keeps values set on earlier runs (e.g. LINKEDIN_CLIENT_ID) when they aren't passed again.
 ( cd "$(dirname "$0")/../backend" && gcloud run deploy "$SERVICE" --source . --region "$REGION" \
     --service-account "$SA" --allow-unauthenticated --min-instances 0 --max-instances 3 \
-    --set-env-vars "GOOGLE_CLOUD_PROJECT=$PROJECT_ID,MEDIA_BUCKET=$BUCKET,DEMO_MODE=1,GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.8-flash},VERTEX_LOCATION=global,LINKEDIN_CLIENT_ID=${LINKEDIN_CLIENT_ID:-}" \
+    --update-env-vars "GOOGLE_CLOUD_PROJECT=$PROJECT_ID,MEDIA_BUCKET=$BUCKET,DEMO_MODE=1,GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.8-flash},VERTEX_LOCATION=global${LINKEDIN_CLIENT_ID:+,LINKEDIN_CLIENT_ID=$LINKEDIN_CLIENT_ID}" \
     --set-secrets "JOB_SECRET=job-secret:latest$( gcloud secrets describe linkedin-client-secret >/dev/null 2>&1 && echo ',LINKEDIN_CLIENT_SECRET=linkedin-client-secret:latest' )" )
 URL="$(gcloud run services describe "$SERVICE" --region "$REGION" --format='value(status.url)')"
 # Luma identifies us by fetching $URL/oauth/luma-client.json, so the API needs to know its own public URL.

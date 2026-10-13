@@ -109,12 +109,24 @@ export function buildServer() {
       });
 
       // ---- Onboarding: LinkedIn "Is this you?" -> integrations -> questionnaire
-      api.get("/onboarding/linkedin/start", async (req) => {
-        const { redirectUri, state } = z.object({ redirectUri: z.string().url(), state: z.string().min(8) }).parse(req.query);
-        return { url: authorizeUrl(redirectUri, state) };
+      // The server makes the state and checks it on return, so a sign-in can't be started by another site.
+      api.get("/onboarding/linkedin/start", async (req, reply) => {
+        const { redirectUri } = z.object({ redirectUri: z.string().url() }).parse(req.query);
+        const state = newState();
+        let url;
+        try {
+          url = authorizeUrl(redirectUri, state);
+        } catch (e) {
+          const msg = (e as Error).message;
+          if (msg === "linkedin_redirect_not_allowed") return reply.code(400).send({ error: "Redirect URI not allowed" });
+          return reply.code(503).send({ error: "LinkedIn sign-in is not set up yet" });
+        }
+        await saveOAuthState(state, { memberId: req.memberId, provider: "linkedin", codeVerifier: "", redirectUri });
+        return { url, state };
       });
       api.post("/onboarding/linkedin/callback", async (req, reply) => {
-        const { code, redirectUri } = z.object({ code: z.string(), redirectUri: z.string().url() }).parse(req.body);
+        const { code, state } = z.object({ code: z.string().min(1), state: z.string().min(8) }).parse(req.body);
+        const { redirectUri } = await takeOAuthState(state, req.memberId, "linkedin");
         try {
           const info = await exchangeCode(code, redirectUri);
           return { candidate: await setLinkedInCandidate(req.memberId, info, req.memberEmail ?? null) };
