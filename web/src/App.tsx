@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, type User } from "firebase/auth";
 import { auth, googleProvider } from "./lib/firebase";
 import { Api, ApiError } from "./lib/api";
+import TestPanel from "./TestPanel";
 
 // Phase 0 gate: sign in with Google and call a protected API route. Real screens replace this.
 export default function App() {
@@ -38,6 +39,7 @@ export default function App() {
           <p>Hi {user.displayName}</p>
           <button onClick={checkApi}>Check API</button> <button onClick={connectCalendar}>Connect Google Calendar</button>{" "}
           <button onClick={() => signOut(auth)}>Sign out</button>
+          <TestPanel onStatus={setStatus} />
         </>
       )}
       <p role="status" aria-live="polite">{status}</p>
