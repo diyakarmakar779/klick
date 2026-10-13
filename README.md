@@ -105,3 +105,6 @@ LUMA_CLIENT_ID=https://<your-cloud-run-url>/oauth/luma-client.json npm run luma:
 
 It opens Luma's sign-in, lists the tools Luma offers, and prints your own events as hey-os would import them. Nothing is saved.
 
+## Team and tools
+
+Built by Diya and Sivasurya. Parts of the code and docs were written with AI assistance (Claude), reviewed and directed by the team; commits credit it as co-author.
