@@ -1,0 +1,9 @@
+{
+  "hosting": {
+    "public": "web/dist",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [{ "source": "**", "destination": "/index.html" }],
+    "headers": [{ "source": "**", "headers": [{ "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }] }]
+  },
+  "firestore": { "rules": "backend/firestore.rules", "indexes": "backend/firestore.indexes.json" }
+}
