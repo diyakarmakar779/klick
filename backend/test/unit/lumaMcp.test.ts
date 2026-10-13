@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { argSets, clientMetadataDocument, mapLumaEvents, pickEventsTool, toolPayload } from "../../src/lib/lumaMcp.js";
+import { argSets, clientMetadataDocument, mapLumaEvents, nextCursor, pickEventsTool, toolPayload } from "../../src/lib/lumaMcp.js";
 
 afterEach(() => {
   delete process.env.PUBLIC_API_URL;
@@ -13,6 +13,10 @@ describe("Luma MCP connector", () => {
       { name: "get_event" }, { name: "list_my_events" }, { name: "update_event" },
     ];
     expect(pickEventsTool(tools)?.name).toBe("list_my_events");
+    // Luma's real tool list (13 Oct 2026): list_events, not get_event (needs an id) or list_calendar_events.
+    const luma = [{ name: "get_event" }, { name: "list_events" }, { name: "search_events" }, { name: "list_calendar_events" }, { name: "list_guests" }];
+    expect(pickEventsTool(luma)?.name).toBe("list_events");
+    expect(pickEventsTool([{ name: "get_event" }])).toBeNull();
     expect(pickEventsTool([{ name: "list_event_guests" }, { name: "create_event" }])).toBeNull();
     process.env.LUMA_EVENTS_TOOL = "get_event";
     expect(pickEventsTool(tools)?.name).toBe("get_event");
@@ -22,6 +26,9 @@ describe("Luma MCP connector", () => {
     const tool = { name: "list_my_events", inputSchema: { properties: { period: { enum: ["upcoming", "past", "all"] } } } };
     expect(argSets(tool)).toEqual([{ period: "upcoming" }, { period: "past" }]);
     expect(argSets({ name: "x" })).toEqual([{}]);
+    expect(argSets({ name: "x", inputSchema: { properties: { include_past: { type: "boolean" } } } })).toEqual([{ include_past: true }]);
+    expect(nextCursor({ entries: [], has_more: true, next_cursor: "abc" })).toBe("abc");
+    expect(nextCursor({ entries: [], has_more: false, next_cursor: "abc" })).toBeNull();
   });
 
   it("maps Luma-shaped entries to true states, skipping declines and never inferring attendance", () => {

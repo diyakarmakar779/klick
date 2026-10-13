@@ -39,12 +39,14 @@ gcloud storage buckets describe "gs://$BUCKET" >/dev/null 2>&1 || \
 echo "==> Service account for Cloud Run (least privilege)"
 gcloud iam service-accounts describe "$SA" >/dev/null 2>&1 || \
   gcloud iam service-accounts create "$SERVICE" --display-name="Event networking API"
+# A new service account takes a few seconds to be visible to IAM; retry instead of failing.
+retry() { for i in 1 2 3 4 5 6; do "$@" && return 0; echo "   (waiting for the new service account, try $i)"; sleep 10; done; return 1; }
 for role in roles/datastore.user roles/aiplatform.user roles/secretmanager.secretAccessor; do
-  gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:$SA" --role="$role" --condition=None >/dev/null
+  retry gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:$SA" --role="$role" --condition=None >/dev/null
 done
-gcloud storage buckets add-iam-policy-binding "gs://$BUCKET" --member="serviceAccount:$SA" --role=roles/storage.objectAdmin >/dev/null
+retry gcloud storage buckets add-iam-policy-binding "gs://$BUCKET" --member="serviceAccount:$SA" --role=roles/storage.objectAdmin >/dev/null
 # Needed so the service can sign short-lived URLs for private voice/photo uploads.
-gcloud iam service-accounts add-iam-policy-binding "$SA" --member="serviceAccount:$SA" --role=roles/iam.serviceAccountTokenCreator >/dev/null
+retry gcloud iam service-accounts add-iam-policy-binding "$SA" --member="serviceAccount:$SA" --role=roles/iam.serviceAccountTokenCreator >/dev/null
 
 echo "==> Secrets"
 gcloud secrets describe job-secret >/dev/null 2>&1 || \
@@ -93,5 +95,5 @@ fi
 echo
 echo "Reminder: set a budget alert at https://console.cloud.google.com/billing/budgets"
 echo "Done. API: $URL"
-echo "Health check: curl $URL/healthz"
+echo "Health check: curl $URL/health"
 echo "Seed demo data: cd backend && GOOGLE_CLOUD_PROJECT=$PROJECT_ID npm run seed"
