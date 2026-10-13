@@ -95,5 +95,5 @@ fi
 echo
 echo "Reminder: set a budget alert at https://console.cloud.google.com/billing/budgets"
 echo "Done. API: $URL"
-echo "Health check: curl $URL/healthz"
+echo "Health check: curl $URL/health"
 echo "Seed demo data: cd backend && GOOGLE_CLOUD_PROJECT=$PROJECT_ID npm run seed"
