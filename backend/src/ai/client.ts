@@ -23,7 +23,7 @@ export interface LlmClient {
   generateJson<T>(req: JsonRequest<T>): Promise<T>;
 }
 
-export const MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+export const MODEL = process.env.GEMINI_MODEL ?? "gemini-3.8-flash";
 
 class VertexGemini implements LlmClient {
   private ai = new GoogleGenAI({
