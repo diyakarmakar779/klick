@@ -32,7 +32,7 @@ export async function api<T>(path: string, init: { method?: string; body?: unkno
 export const Api = {
   me: () => api<Record<string, unknown>>("/v1/me"),
   saveMe: (body: Record<string, unknown>) => api("/v1/me", { method: "PUT", body }),
-  syncCalendar: (accessToken: string) => api<{ imported: number }>("/v1/sources/google_calendar/sync", { method: "POST", body: { accessToken } }),
+  syncCalendar: (accessToken: string) => api<{ imported: number; removed: number }>("/v1/sources/google_calendar/sync", { method: "POST", body: { accessToken } }),
   // Luma: send the member to `url`; Luma returns to /connect/luma/callback?code=&state=, which calls lumaCallback.
   lumaStart: (redirectUri: string) =>
     api<{ url: string; state: string }>(`/v1/sources/luma_mcp/start?redirectUri=${encodeURIComponent(redirectUri)}`),

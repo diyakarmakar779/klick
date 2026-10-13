@@ -246,6 +246,21 @@ export async function disconnectSource(memberId: string, provider: SourceConnect
   return memberships.size;
 }
 
+// After a re-sync, drop this source's memberships for events it no longer returns (e.g. newly filtered out).
+export async function pruneSource(memberId: string, provider: SourceConnection["provider"], keepEventIds: string[]): Promise<number> {
+  const keep = new Set(keepEventIds);
+  const memberships = await db()
+    .collection(COLLECTIONS.eventMemberships)
+    .where("memberId", "==", memberId)
+    .where("provenance.source", "==", provider)
+    .get();
+  const stale = memberships.docs.filter((d) => !keep.has(d.get("eventId")));
+  const batch = db().batch();
+  stale.forEach((d) => batch.delete(d.ref));
+  await batch.commit();
+  return stale.length;
+}
+
 const CONFIRMED = ["registered", "host", "attended"];
 export const MIN_COUNT = 3; // below this, show "fewer than 3" so a count can't single someone out
 

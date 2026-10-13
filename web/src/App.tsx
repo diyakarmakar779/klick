@@ -15,8 +15,8 @@ export default function App() {
     const res = await signInWithPopup(auth, googleProvider(true));
     const token = GoogleAuthProvider.credentialFromResult(res)?.accessToken;
     if (!token) return setStatus("Calendar access was not granted.");
-    const { imported } = await Api.syncCalendar(token);
-    setStatus(`Imported ${imported} events.`);
+    const { imported, removed } = await Api.syncCalendar(token);
+    setStatus(`Imported ${imported} events${removed ? `, removed ${removed} that aren't events` : ""}.`);
   }
 
   async function checkApi() {
