@@ -9,6 +9,7 @@ import { getMember, MemberInput, ownProfile, publicProfile, upsertMember } from 
 import {
   createSourceConnection,
   disconnectSource,
+  pruneSource,
   eventStats,
   getEvent,
   getMembership,
@@ -180,7 +181,8 @@ export function buildServer() {
         }
         await createSourceConnection(req.memberId, "google_calendar", [CALENDAR_SCOPE], null);
         const ids = await importEvents(req.memberId, "google_calendar", items);
-        return { imported: ids.length };
+        const removed = await pruneSource(req.memberId, "google_calendar", ids);
+        return { imported: ids.length, removed };
       });
       api.delete("/sources/:provider", async (req) => {
         const provider = Provider.parse((req.params as { provider: string }).provider);

@@ -7,9 +7,10 @@ import type { MembershipState } from "../db/schema.js";
 
 export const CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.events.readonly";
 
-interface GCalAttendee { self?: boolean; responseStatus?: string; organizer?: boolean }
+interface GCalAttendee { self?: boolean; responseStatus?: string; organizer?: boolean; resource?: boolean }
 export interface GCalEvent {
   id: string;
+  eventType?: string; // "default", or "fromGmail" (flights, trains, bookings), "outOfOffice", "focusTime", ...
   iCalUID?: string;
   status?: string;
   summary?: string;
@@ -43,8 +44,22 @@ export function mapParticipation(ev: GCalEvent): { state: MembershipState; rawSt
   }
 }
 
+// Pages that host real events. A calendar entry linking to one counts even if nobody else is invited.
+const EVENT_LINK =
+  /(lu\.ma|luma\.com|meetup\.com|eventbrite\.|gdg\.community\.dev|konfhub\.com|commudle\.com|townscript\.com|allevents\.in|devpost\.com|hasgeek\.com)\//i;
+
+// A calendar is mostly not events: flights and trains Gmail adds, reminders, focus time.
+// Keep only ordinary entries that involve other people or link to an event page.
+export function looksLikeEvent(ev: GCalEvent): boolean {
+  if (ev.eventType && ev.eventType !== "default") return false;
+  const others = (ev.attendees ?? []).filter((a) => !a.self && !a.resource);
+  if (others.length > 0 || !ev.organizer?.self) return true;
+  return EVENT_LINK.test(`${ev.description ?? ""} ${ev.location ?? ""}`);
+}
+
 export function toImportedEvent(ev: GCalEvent): ImportedEvent | null {
   if (ev.status === "cancelled") return null;
+  if (!looksLikeEvent(ev)) return null;
   const startRaw = ev.start?.dateTime ?? ev.start?.date;
   if (!startRaw) return null;
   const p = mapParticipation(ev);
@@ -72,7 +87,8 @@ export async function fetchCalendarEvents(accessToken: string, now = new Date())
     timeMax: new Date(now.getTime() + 90 * 86400000).toISOString(),
     singleEvents: "true",
     orderBy: "startTime",
-    maxResults: "100",
+    maxResults: "250",
+    eventTypes: "default",
   });
   const res = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?${params}`, {
     headers: { Authorization: `Bearer ${accessToken}` },

@@ -3,7 +3,7 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { buildServer } from "../../src/server.js";
 import { setLinkedInCandidate } from "../../src/db/repos/onboarding.js";
 import { setLlm } from "../../src/ai/client.js";
-import { canonicalKey, importEvents, visibleAttendees } from "../../src/db/repos/events.js";
+import { canonicalKey, importEvents, pruneSource, visibleAttendees } from "../../src/db/repos/events.js";
 import { FakeLlm } from "../fakeLlm.js";
 
 const llm = new FakeLlm();
@@ -85,6 +85,17 @@ describe("ingestion and membership", () => {
     expect(page.event.providerGuestCount).toBe(640);
     expect(page.event.sourceRefs.map((r: { provider: string }) => r.provider).sort()).toEqual(["google_calendar", "mock_luma"]);
     expect(canonicalKey({ url: null, description: "nothing here" })).toBeNull();
+  });
+
+  it("a Calendar re-sync drops entries it no longer imports and keeps other sources", async () => {
+    await onboard("asha");
+    const cal = (id: string) => ({ externalId: id, title: id, description: "", startsAt: new Date(), state: "host" as const });
+    const [flight, meetup] = await importEvents("asha", "google_calendar", [cal("flight@google.com"), cal("meetup@google.com")]);
+    expect(await pruneSource("asha", "google_calendar", [meetup])).toBe(1);
+    const ids = (await call("asha", "GET", "/v1/events")).body.map((e: { event: { id: string } }) => e.event.id);
+    expect(ids).toContain(meetup);
+    expect(ids).not.toContain(flight);
+    expect(ids.length).toBe(3); // the meetup plus the two mock Luma events from onboarding
   });
 
   it("event page shows counts with a small-number floor and only my accepted connections, never a guest list", async () => {

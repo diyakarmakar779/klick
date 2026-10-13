@@ -73,7 +73,7 @@ echo "==> Firestore rules and indexes"
 echo "==> Deploy API to Cloud Run"
 ( cd "$(dirname "$0")/../backend" && gcloud run deploy "$SERVICE" --source . --region "$REGION" \
     --service-account "$SA" --allow-unauthenticated --min-instances 0 --max-instances 3 \
-    --set-env-vars "GOOGLE_CLOUD_PROJECT=$PROJECT_ID,MEDIA_BUCKET=$BUCKET,DEMO_MODE=1,GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash},VERTEX_LOCATION=global,LINKEDIN_CLIENT_ID=${LINKEDIN_CLIENT_ID:-}" \
+    --set-env-vars "GOOGLE_CLOUD_PROJECT=$PROJECT_ID,MEDIA_BUCKET=$BUCKET,DEMO_MODE=1,GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.8-flash},VERTEX_LOCATION=global,LINKEDIN_CLIENT_ID=${LINKEDIN_CLIENT_ID:-}" \
     --set-secrets "JOB_SECRET=job-secret:latest$( gcloud secrets describe linkedin-client-secret >/dev/null 2>&1 && echo ',LINKEDIN_CLIENT_SECRET=linkedin-client-secret:latest' )" )
 URL="$(gcloud run services describe "$SERVICE" --region "$REGION" --format='value(status.url)')"
 # Luma identifies us by fetching $URL/oauth/luma-client.json, so the API needs to know its own public URL.
