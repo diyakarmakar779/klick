@@ -60,6 +60,7 @@ await withLuma(token, async (client) => {
   const tool = pickEventsTool(tools as never);
   console.log(`\nPicked: ${tool?.name ?? "(none, set LUMA_EVENTS_TOOL)"}`);
   if (!tool) return;
+  console.log(`Its inputs: ${JSON.stringify(tool.inputSchema, null, 2).slice(0, 2000)}`);
   for (const args of argSets(tool)) {
     const raw = toolPayload(await client.callTool({ name: tool.name, arguments: args }));
     console.log(`\nRaw output for ${JSON.stringify(args)} (first 3000 chars):\n${JSON.stringify(raw, null, 2).slice(0, 3000)}`);

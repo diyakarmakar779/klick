@@ -87,30 +87,52 @@ export async function withLuma<T>(accessToken: string, fn: (c: Client) => Promis
   }
 }
 
-type Tool = { name: string; description?: string; inputSchema?: { properties?: Record<string, { enum?: unknown[] }> } };
+type Tool = {
+  name: string;
+  description?: string;
+  inputSchema?: { properties?: Record<string, { enum?: unknown[]; type?: string | string[] }> };
+};
 
 // Pick the read-only "list my events" tool. Never anything that writes or touches guest lists.
 export function pickEventsTool(tools: Tool[]): Tool | null {
   const pinned = process.env.LUMA_EVENTS_TOOL;
   if (pinned) return tools.find((t) => t.name === pinned) ?? null;
   const forbidden = /(create|update|delete|add|remove|approve|decline|send|invite|guest|contact|coupon|ticket|blast|calendar|search|discover|public|host_)/i;
-  const candidates = tools.filter((t) => /event/i.test(t.name) && !forbidden.test(t.name));
+  // Luma's server (checked 13 Oct 2026) calls it list_events: "events you're hosting or attending".
+  const known = tools.find((t) => t.name === "list_events");
+  if (known) return known;
+  // Otherwise a listing tool (not get_*, which needs an id) about events, not guests, calendars or search.
+  const candidates = tools.filter((t) => /^list/i.test(t.name) && /event/i.test(t.name) && !forbidden.test(t.name));
   const score = (t: Tool) =>
     (/(my|user|own|attend|registered|upcoming|past)/i.test(t.name) ? 4 : 0) +
-    (/(list|get)/i.test(t.name) ? 2 : 0) +
-    (/(your|attendee|attending|registered)/i.test(t.description ?? "") ? 1 : 0);
+    (/(you're|your|attendee|attending|registered)/i.test(t.description ?? "") ? 1 : 0);
   return candidates.sort((a, b) => score(b) - score(a))[0] ?? null;
 }
 
-// If the tool takes an enum like {period: "upcoming" | "past"}, call it once per value; else once with no args.
+// Upcoming and past: an enum like {period: "upcoming" | "past"} gets one call per value, a flag like
+// {include_past: boolean} is switched on; otherwise one call with no args.
 export function argSets(tool: Tool): Record<string, unknown>[] {
   if (process.env.LUMA_EVENTS_TOOL_ARGS) return JSON.parse(process.env.LUMA_EVENTS_TOOL_ARGS);
-  for (const [key, prop] of Object.entries(tool.inputSchema?.properties ?? {})) {
+  const props = Object.entries(tool.inputSchema?.properties ?? {});
+  for (const [key, prop] of props) {
     const values = (prop.enum ?? []).map(String);
     const wanted = values.filter((v) => /^(upcoming|past|future|previous)$/i.test(v));
     if (wanted.length) return wanted.map((v) => ({ [key]: v }));
   }
-  return [{}];
+  const flag = props.find(([key, prop]) => /past/i.test(key) && [prop.type].flat().includes("boolean"));
+  return flag ? [{ [flag[0]]: true }] : [{}];
+}
+
+// Name of the paging argument, if the tool takes one (cursor, pagination_cursor, ...).
+function cursorArg(tool: Tool): string | null {
+  return Object.keys(tool.inputSchema?.properties ?? {}).find((k) => /cursor/i.test(k)) ?? null;
+}
+
+export function nextCursor(payload: unknown): string | null {
+  const p = payload as Record<string, unknown> | null;
+  if (!p || typeof p !== "object" || p.has_more === false) return null;
+  const c = p.next_cursor ?? p.nextCursor ?? p.cursor;
+  return typeof c === "string" && c ? c : null;
 }
 
 export async function fetchLumaEvents(accessToken: string): Promise<ImportedEvent[]> {
@@ -119,9 +141,17 @@ export async function fetchLumaEvents(accessToken: string): Promise<ImportedEven
     const tool = pickEventsTool(tools as Tool[]);
     if (!tool) throw new Error("luma_events_tool_not_found");
     const out: ImportedEvent[] = [];
+    const cursorKey = cursorArg(tool);
     for (const args of argSets(tool)) {
-      const res = await client.callTool({ name: tool.name, arguments: args });
-      out.push(...mapLumaEvents(toolPayload(res)));
+      let cursor: string | null = null;
+      for (let page = 0; page < 10; page++) {
+        const payload = toolPayload(
+          await client.callTool({ name: tool.name, arguments: cursor && cursorKey ? { ...args, [cursorKey]: cursor } : args }),
+        );
+        out.push(...mapLumaEvents(payload));
+        cursor = cursorKey ? nextCursor(payload) : null;
+        if (!cursor) break;
+      }
     }
     const seen = new Set<string>();
     return out.filter((e) => !seen.has(e.externalId) && !!seen.add(e.externalId));
