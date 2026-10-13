@@ -1,4 +1,5 @@
 import Fastify from "fastify";
+import cors from "@fastify/cors";
 import { z, ZodError } from "zod";
 import { requireMember } from "./lib/auth.js";
 import { ConsentError } from "./domain/consent.js";
@@ -65,6 +66,11 @@ export function buildServer() {
     app.log.error(err);
     return reply.code(500).send({ error: "Internal error" });
   });
+
+  // The web app (Firebase Hosting, or Vite in dev) calls this API from another origin.
+  const origins = [process.env.WEB_URL, "http://localhost:5173"].filter((o): o is string => !!o);
+  if (process.env.GOOGLE_CLOUD_PROJECT) origins.push(`https://${process.env.GOOGLE_CLOUD_PROJECT}.firebaseapp.com`);
+  app.register(cors, { origin: origins, methods: ["GET", "POST", "PUT", "DELETE"] });
 
   // Not /healthz: Cloud Run reserves paths ending in "z".
   app.get("/health", async () => ({ ok: true }));
