@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Api, ApiError, type Match, type MyEvent } from "./lib/api";
+import LinkedInConnect from "./LinkedInConnect";
 
 // Temporary test panel for trying the live API end to end. The real screens replace it.
 export default function TestPanel({ onStatus }: { onStatus: (s: string) => void }) {
@@ -26,6 +27,7 @@ export default function TestPanel({ onStatus }: { onStatus: (s: string) => void 
   return (
     <section style={{ marginTop: 24, borderTop: "1px solid #ccc", paddingTop: 16 }}>
       <h2>Test panel</h2>
+      <LinkedInConnect onStatus={onStatus} />
 
       <label>
         Your interests (comma separated)

@@ -39,6 +39,11 @@ export const Api = {
   lumaCallback: (code: string, state: string) =>
     api<{ imported: number }>("/v1/sources/luma_mcp/callback", { method: "POST", body: { code, state } }),
   events: () => api<MyEvent[]>("/v1/events"),
+  linkedinStart: (redirectUri: string) =>
+    api<{ url: string; state: string }>(`/v1/onboarding/linkedin/start?redirectUri=${encodeURIComponent(redirectUri)}`),
+  linkedinCallback: (code: string, state: string) =>
+    api<{ candidate: LinkedInCandidate }>("/v1/onboarding/linkedin/callback", { method: "POST", body: { code, state } }),
+  linkedinConfirm: (isMe: boolean) => api<Record<string, unknown>>("/v1/onboarding/linkedin/confirm", { method: "POST", body: { isMe } }),
   joinDemoEvents: () => api<{ imported: number }>("/v1/sources/mock_luma/connect", { method: "POST" }),
   setVisibility: (eventId: string, visibility: "hidden" | "confirmed_attendees" | "connections" | null) =>
     api(`/v1/events/${eventId}/visibility`, { method: "PUT", body: { visibility } }),
@@ -61,4 +66,11 @@ export interface Match {
   starter: string;
   source: "gemini" | "overlap";
   profile?: { displayName: string; headline: string };
+}
+
+export interface LinkedInCandidate {
+  name: string;
+  pictureUrl: string | null;
+  email: string | null;
+  emailMatchesAccount: boolean;
 }
