@@ -164,6 +164,15 @@ describe("consent-aware exchange, memories and follow-ups", () => {
   });
 });
 
+describe("CORS", () => {
+  it("lets the web app's origin call the API and no one else", async () => {
+    const ok = await app.inject({ method: "OPTIONS", url: "/v1/me", headers: { origin: "http://localhost:5173", "access-control-request-method": "GET" } });
+    expect(ok.headers["access-control-allow-origin"]).toBe("http://localhost:5173");
+    const bad = await app.inject({ method: "OPTIONS", url: "/v1/me", headers: { origin: "https://evil.example", "access-control-request-method": "GET" } });
+    expect(bad.headers["access-control-allow-origin"]).toBeUndefined();
+  });
+});
+
 describe("Luma sign-in", () => {
   it("serves the client metadata document and rejects unknown or someone else's sign-in state", async () => {
     expect((await app.inject({ method: "GET", url: "/oauth/luma-client.json" })).statusCode).toBe(503);
