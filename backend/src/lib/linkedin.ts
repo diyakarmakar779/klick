@@ -9,7 +9,15 @@ export interface LinkedInUserInfo {
   email_verified?: boolean;
 }
 
+// Where LinkedIn may send the member back to. Each must also be listed in the LinkedIn app's Auth settings.
+export function linkedinRedirectUris(): string[] {
+  const web = process.env.WEB_URL?.replace(/\/$/, "");
+  return [...(web ? [`${web}/connect/linkedin/callback`] : []), "http://localhost:5173/connect/linkedin/callback"];
+}
+
 export function authorizeUrl(redirectUri: string, state: string): string {
+  if (!process.env.LINKEDIN_CLIENT_ID) throw new Error("linkedin_not_configured");
+  if (!linkedinRedirectUris().includes(redirectUri)) throw new Error("linkedin_redirect_not_allowed");
   const p = new URLSearchParams({
     response_type: "code",
     client_id: process.env.LINKEDIN_CLIENT_ID ?? "",
