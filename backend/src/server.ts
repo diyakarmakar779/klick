@@ -1,0 +1,367 @@
+import Fastify from "fastify";
+import { z, ZodError } from "zod";
+import { requireMember } from "./lib/auth.js";
+import { ConsentError } from "./domain/consent.js";
+import { safeWording } from "./domain/membership.js";
+import { ContactField, Provider, Visibility } from "./db/schema.js";
+import { getMember, MemberInput, ownProfile, publicProfile, upsertMember } from "./db/repos/members.js";
+import {
+  createSourceConnection,
+  disconnectSource,
+  eventStats,
+  getEvent,
+  getMembership,
+  importEvents,
+  listMyMemberships,
+  listSourceConnections,
+  setEventGoal,
+  setEventVisibility,
+  visibleAttendees,
+} from "./db/repos/events.js";
+import {
+  actOnConnection,
+  connectionView,
+  listConnections,
+  requestConnection,
+  updateSharedFields,
+} from "./db/repos/connections.js";
+import { createQrToken, previewQr, resolveQrToken } from "./db/repos/qr.js";
+import { ownsPath, signedUploadUrl } from "./lib/storage.js";
+import { authorizeUrl, exchangeCode } from "./lib/linkedin.js";
+import {
+  confirmLinkedIn,
+  finishIntegrations,
+  saveQuestionnaire,
+  setLinkedInCandidate,
+  skipIdentity,
+} from "./db/repos/onboarding.js";
+import { Questionnaire } from "./db/schema.js";
+import {
+  createFollowUp,
+  createMemory,
+  deleteMemory,
+  listFollowUps,
+  listMemories,
+  promptDueFollowUps,
+  reviewMemory,
+  setFollowUpStatus,
+  shareMemory,
+} from "./db/repos/memories.js";
+import { mockLumaEvents } from "./lib/mockLuma.js";
+import { AiError } from "./ai/client.js";
+import { analyzeMemory, draftFollowUp, draftFollowUpById, suggestMatches } from "./services/ai.js";
+import { CALENDAR_SCOPE, fetchCalendarEvents } from "./lib/googleCalendar.js";
+import { clientMetadataDocument, fetchLumaEvents, finishLumaAuth, startLumaAuth } from "./lib/lumaMcp.js";
+import { newState, saveOAuthState, takeOAuthState } from "./db/repos/oauthStates.js";
+
+export function buildServer() {
+  const app = Fastify({ logger: process.env.NODE_ENV !== "test" });
+
+  app.setErrorHandler((err, _req, reply) => {
+    if (err instanceof ZodError) return reply.code(400).send({ error: "Invalid input", issues: err.issues });
+    if (err instanceof ConsentError) return reply.code(err.statusCode).send({ error: err.message });
+    // Recoverable for the UI: show "try again" and keep the user's data as it was.
+    if (err instanceof AiError) return reply.code(503).send({ error: "AI is unavailable right now", retryable: true });
+    app.log.error(err);
+    return reply.code(500).send({ error: "Internal error" });
+  });
+
+  app.get("/healthz", async () => ({ ok: true }));
+
+  // Public: Luma fetches this to identify hey-os (OAuth Client ID Metadata Document; Luma has no client registration).
+  app.get("/oauth/luma-client.json", async (_req, reply) => {
+    try {
+      return clientMetadataDocument();
+    } catch {
+      return reply.code(503).send({ error: "Luma is not configured" });
+    }
+  });
+
+  // Everything under /v1 needs a signed-in member.
+  app.register(
+    async (api) => {
+      api.addHook("preHandler", requireMember);
+
+      // ---- Member
+      api.get("/me", async (req, reply) => {
+        const m = await getMember(req.memberId);
+        if (!m) return reply.code(404).send({ error: "Profile not created" });
+        return ownProfile(m);
+      });
+      api.put("/me", async (req) => ownProfile(await upsertMember(req.memberId, MemberInput.parse(req.body))));
+      // Profiles are only reachable through a connection (matches and QR previews carry their own copy),
+      // so member ids can't be used to browse people.
+      api.get("/members/:id", async (req, reply) => {
+        const { id } = req.params as { id: string };
+        const linked = (await listConnections(req.memberId)).some(
+          (c) => c.memberIds.includes(id) && ["pending", "accepted"].includes(c.status),
+        );
+        const m = linked ? await getMember(id) : null;
+        return m ? publicProfile(m) : reply.code(404).send({ error: "Not found" });
+      });
+
+      // ---- Onboarding: LinkedIn "Is this you?" -> integrations -> questionnaire
+      api.get("/onboarding/linkedin/start", async (req) => {
+        const { redirectUri, state } = z.object({ redirectUri: z.string().url(), state: z.string().min(8) }).parse(req.query);
+        return { url: authorizeUrl(redirectUri, state) };
+      });
+      api.post("/onboarding/linkedin/callback", async (req, reply) => {
+        const { code, redirectUri } = z.object({ code: z.string(), redirectUri: z.string().url() }).parse(req.body);
+        try {
+          const info = await exchangeCode(code, redirectUri);
+          return { candidate: await setLinkedInCandidate(req.memberId, info, req.memberEmail ?? null) };
+        } catch (e) {
+          return reply.code(502).send({ error: "LinkedIn sign-in failed", detail: (e as Error).message });
+        }
+      });
+      api.post("/onboarding/linkedin/confirm", async (req) => {
+        const { isMe } = z.object({ isMe: z.boolean() }).parse(req.body);
+        return ownProfile(await confirmLinkedIn(req.memberId, isMe));
+      });
+      api.post("/onboarding/identity/skip", async (req) => ownProfile(await skipIdentity(req.memberId)));
+      api.post("/onboarding/integrations/done", async (req) => ownProfile(await finishIntegrations(req.memberId)));
+      api.put("/onboarding/questionnaire", async (req) =>
+        ownProfile(await saveQuestionnaire(req.memberId, Questionnaire.omit({ updatedAt: true }).parse(req.body))),
+      );
+
+      // ---- Sources. Luma: sign in on Luma, come back with a code, read my own events once over MCP, drop the token.
+      api.get("/sources/luma_mcp/start", async (req, reply) => {
+        const { redirectUri } = z.object({ redirectUri: z.string().url() }).parse(req.query);
+        const state = newState();
+        try {
+          const { url, codeVerifier } = await startLumaAuth(redirectUri, state);
+          await saveOAuthState(state, { memberId: req.memberId, provider: "luma_mcp", codeVerifier, redirectUri });
+          return { url, state };
+        } catch (e) {
+          const msg = (e as Error).message;
+          if (msg === "luma_redirect_not_allowed") return reply.code(400).send({ error: "Redirect URI not allowed" });
+          if (msg === "luma_not_configured") return reply.code(503).send({ error: "Luma is not configured" });
+          return reply.code(502).send({ error: "Luma is unavailable" });
+        }
+      });
+      api.post("/sources/luma_mcp/callback", async (req, reply) => {
+        const { code, state } = z.object({ code: z.string().min(1), state: z.string().min(8) }).parse(req.body);
+        const saved = await takeOAuthState(state, req.memberId, "luma_mcp");
+        let items;
+        try {
+          const token = await finishLumaAuth({ code, codeVerifier: saved.codeVerifier, redirectUri: saved.redirectUri });
+          items = await fetchLumaEvents(token);
+        } catch (e) {
+          req.log.warn({ err: (e as Error).message }, "luma sync failed");
+          return reply.code(502).send({ error: "Couldn't read your Luma events; try again" });
+        }
+        await createSourceConnection(req.memberId, "luma_mcp", ["events:read:self"], null);
+        const ids = await importEvents(req.memberId, "luma_mcp", items);
+        return { imported: ids.length };
+      });
+      api.get("/sources", async (req) =>
+        (await listSourceConnections(req.memberId)).map(({ tokenRef: _t, ...s }) => s),
+      );
+      api.post("/sources/mock_luma/connect", async (req) => {
+        await createSourceConnection(req.memberId, "mock_luma", ["events:read:self"], null);
+        const ids = await importEvents(req.memberId, "mock_luma", mockLumaEvents(req.memberId));
+        return { imported: ids.length };
+      });
+      api.post("/sources/google_calendar/sync", async (req, reply) => {
+        const { accessToken } = z.object({ accessToken: z.string().min(10) }).parse(req.body);
+        let items;
+        try {
+          items = await fetchCalendarEvents(accessToken);
+        } catch (e) {
+          const auth = (e as Error).message === "calendar_auth";
+          return reply.code(auth ? 401 : 502).send({ error: auth ? "Calendar access expired; reconnect" : "Calendar unavailable" });
+        }
+        await createSourceConnection(req.memberId, "google_calendar", [CALENDAR_SCOPE], null);
+        const ids = await importEvents(req.memberId, "google_calendar", items);
+        return { imported: ids.length };
+      });
+      api.delete("/sources/:provider", async (req) => {
+        const provider = Provider.parse((req.params as { provider: string }).provider);
+        return { deletedMemberships: await disconnectSource(req.memberId, provider) };
+      });
+
+      // ---- Events and memberships
+      api.get("/events", async (req) =>
+        (await listMyMemberships(req.memberId)).map(({ membership, event }) => ({
+          event,
+          state: membership.state,
+          label: safeWording(membership.state, event.title),
+          provenance: membership.provenance,
+          visibility: membership.visibility,
+          effectiveVisibility: membership.effectiveVisibility,
+          goal: membership.goal,
+        })),
+      );
+      // Event page: details plus counts. Only for members who have this event themselves (R1); no guest list (R11).
+      api.get("/events/:eventId", async (req, reply) => {
+        const { eventId } = req.params as { eventId: string };
+        const membership = await getMembership(req.memberId, eventId);
+        if (!membership) return reply.code(404).send({ error: "Not found" });
+        const event = (await getEvent(eventId))!;
+        const stats = await eventStats(eventId, req.memberId);
+        const friends = await Promise.all(stats.connectionsGoing.map((id) => getMember(id)));
+        return {
+          event,
+          state: membership.state,
+          label: safeWording(membership.state, event.title),
+          ...stats,
+          connectionsGoing: friends.filter((m) => !!m).map((m) => publicProfile(m!)),
+        };
+      });
+      api.put("/events/:eventId/goal", async (req) => {
+        const { eventId } = req.params as { eventId: string };
+        const { goal } = z.object({ goal: z.string().max(280).nullable() }).parse(req.body);
+        return setEventGoal(req.memberId, eventId, goal);
+      });
+      api.put("/events/:eventId/visibility", async (req) => {
+        const { eventId } = req.params as { eventId: string };
+        const { visibility } = z.object({ visibility: Visibility.nullable() }).parse(req.body);
+        return setEventVisibility(req.memberId, eventId, visibility);
+      });
+      // ---- Gemini matches for an event (eligibility is checked before the model sees anyone)
+      api.get("/events/:eventId/matches", async (req) => suggestMatches(req.memberId, (req.params as { eventId: string }).eventId));
+
+      // ---- QR exchange: show a code, the scanner previews, then sends a request
+      api.post("/qr", async (req) => {
+        const { eventId } = z.object({ eventId: z.string().nullable().default(null) }).parse(req.body ?? {});
+        const t = await createQrToken(req.memberId, eventId);
+        return { token: t.id, expiresAt: t.expiresAt };
+      });
+      api.get("/qr/:token", async (req) => previewQr((req.params as { token: string }).token, req.memberId));
+
+      // ---- Connections
+      api.post("/connections", async (req, reply) => {
+        const body = z
+          .object({
+            to: z.string().optional(),
+            qrToken: z.string().optional(),
+            eventId: z.string().nullable().default(null),
+            context: z.string().max(280).default(""),
+            requestNote: z
+              .object({
+                kind: z.enum(["text", "voice", "photo"]),
+                text: z.string().max(500).nullable().default(null),
+                storagePath: z.string().nullable().default(null),
+              })
+              .nullable()
+              .default(null),
+            shareFields: z.array(ContactField).default([]),
+          })
+          .refine((b) => !!b.to !== !!b.qrToken, "Give exactly one of `to` or `qrToken`")
+          .parse(req.body);
+        if (!ownsPath(req.memberId, body.requestNote?.storagePath)) {
+          return reply.code(403).send({ error: "Media must be your own upload" });
+        }
+        let to = body.to!;
+        let eventId = body.eventId;
+        if (body.qrToken) {
+          const t = await resolveQrToken(body.qrToken);
+          to = t.memberId;
+          eventId = eventId ?? t.eventId;
+        }
+        return requestConnection(req.memberId, to, {
+          eventId,
+          context: body.context,
+          requestNote: body.requestNote,
+          shareFields: body.shareFields,
+        });
+      });
+      api.get("/connections/:id", async (req) => connectionView((req.params as { id: string }).id, req.memberId));
+      api.put("/connections/:id/shared-fields", async (req) => {
+        const { fields } = z.object({ fields: z.array(ContactField) }).parse(req.body);
+        return updateSharedFields((req.params as { id: string }).id, req.memberId, fields);
+      });
+      api.get("/connections", async (req) => {
+        const { status } = req.query as { status?: string };
+        return listConnections(req.memberId, status ? z.enum(["pending", "accepted", "declined", "revoked", "blocked"]).parse(status) : undefined);
+      });
+      api.post("/connections/:id/:action", async (req) => {
+        const { id, action } = req.params as { id: string; action: string };
+        const { shareFields } = z.object({ shareFields: z.array(ContactField).default([]) }).parse(req.body ?? {});
+        return actOnConnection(id, req.memberId, z.enum(["accept", "decline", "revoke", "block"]).parse(action), shareFields);
+      });
+
+      // ---- Private media upload (voice note / photo): browser PUTs straight to Cloud Storage
+      api.post("/uploads", async (req) => {
+        const body = z
+          .object({ kind: z.enum(["voice", "photo"]), contentType: z.string().regex(/^(audio|image)\/[\w.+-]+/) })
+          .parse(req.body);
+        return signedUploadUrl(req.memberId, body.kind, body.contentType);
+      });
+
+      // ---- Memories
+      api.post("/memories", async (req) => {
+        const body = z
+          .object({
+            kind: z.enum(["text", "voice", "photo"]),
+            text: z.string().max(5000).nullable().default(null),
+            storagePath: z.string().nullable().default(null),
+            connectionId: z.string().nullable().default(null),
+            eventId: z.string().nullable().default(null),
+          })
+          .parse(req.body);
+        return createMemory(req.memberId, body);
+      });
+      api.get("/memories", async (req) => {
+        const { connectionId } = req.query as { connectionId?: string };
+        return listMemories(req.memberId, connectionId);
+      });
+      api.post("/memories/:id/analyze", async (req) => analyzeMemory((req.params as { id: string }).id, req.memberId));
+      api.post("/memories/:id/review", async (req) => {
+        const { text } = z.object({ text: z.string().max(5000) }).parse(req.body);
+        return reviewMemory((req.params as { id: string }).id, req.memberId, text);
+      });
+      api.post("/memories/:id/share", async (req) => {
+        const { with: withId } = z.object({ with: z.string() }).parse(req.body);
+        return shareMemory((req.params as { id: string }).id, req.memberId, withId);
+      });
+      api.delete("/memories/:id", async (req) => {
+        await deleteMemory((req.params as { id: string }).id, req.memberId);
+        return { ok: true };
+      });
+
+      // ---- Follow-ups
+      api.post("/followups", async (req) => {
+        const body = z
+          .object({ connectionId: z.string(), reason: z.string().max(500), dueAt: z.coerce.date(), sourceMemoryId: z.string().nullable().default(null) })
+          .parse(req.body);
+        return createFollowUp(req.memberId, body);
+      });
+      api.get("/followups", async (req) => listFollowUps(req.memberId));
+      api.post("/followups/:id/draft", async (req) => {
+        const opts = z.object({ language: z.string().max(10).optional(), simpleLanguage: z.boolean().optional() }).parse(req.body ?? {});
+        return draftFollowUpById((req.params as { id: string }).id, req.memberId, opts);
+      });
+      api.post("/followups/:id/:status", async (req) => {
+        const { id, status } = req.params as { id: string; status: string };
+        return setFollowUpStatus(id, req.memberId, z.enum(["sent", "done", "dismissed"]).parse(status));
+      });
+    },
+    { prefix: "/v1" },
+  );
+
+  // Target for Cloud Scheduler / Pub/Sub push. Guarded by a shared secret; `now` (time fast-forward) only in demo mode.
+  app.post("/jobs/reconnect", async (req, reply) => {
+    if (!process.env.JOB_SECRET || req.headers["x-job-secret"] !== process.env.JOB_SECRET) {
+      return reply.code(403).send({ error: "Forbidden" });
+    }
+    const parsed = z.object({ now: z.coerce.date().optional() }).parse(req.body ?? {});
+    const now = process.env.DEMO_MODE === "1" ? parsed.now : undefined;
+    const due = await promptDueFollowUps(now);
+    // Draft each prompted follow-up; a Gemini failure leaves it prompted without a draft (the UI offers "try again").
+    const drafted = await Promise.allSettled(due.map((fu) => draftFollowUp(fu)));
+    return { prompted: due.length, drafted: drafted.filter((d) => d.status === "fulfilled").length };
+  });
+
+  return app;
+}
+
+if (process.env.NODE_ENV !== "test") {
+  const port = Number(process.env.PORT ?? 8080);
+  buildServer()
+    .listen({ port, host: "0.0.0.0" })
+    .catch((err) => {
+      console.error(err);
+      process.exit(1);
+    });
+}
