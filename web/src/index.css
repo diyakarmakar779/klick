@@ -1,3 +1,4 @@
-:root { color-scheme: light dark; }
-body { margin: 0; }
-button { min-height: 44px; padding: 0 16px; font-size: 16px; }
+/* Prod :D tokens and component styles (copied from design/prod-design-system), then app layout. */
+@import "./styles/tokens.css";
+@import "./styles/components.css";
+@import "./styles/app.css";

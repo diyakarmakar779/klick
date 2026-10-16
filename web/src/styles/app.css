@@ -1,0 +1,54 @@
+/* App layout for Klick, following design/prod-design-system/components/AppShell. */
+*,*::before,*::after{box-sizing:border-box}
+html,body,#root{min-height:100%}
+h1,h2,h3,h4,p{margin:0}
+a{color:inherit}
+
+.k-shell{min-height:100dvh;display:flex}
+.k-main{flex:1;min-width:0;display:flex;flex-direction:column}
+.k-scroll{flex:1;padding-bottom:calc(var(--bottom-nav-height) + env(safe-area-inset-bottom,0px) + var(--space-8))}
+
+/* Phone: fixed bottom nav, full width */
+.k-bottomnav{position:fixed;left:0;right:0;bottom:0;z-index:20;padding:0 var(--space-2)}
+.k-bottomnav .pd-nav{max-width:none;margin:0 auto;border-radius:var(--radius-2xl) var(--radius-2xl) 0 0;border-bottom:0}
+.k-sidebar{display:none}
+
+/* Tablet: icon rail. Desktop: full sidebar. */
+@media (min-width:768px){
+  .k-bottomnav{display:none}
+  .k-sidebar{display:block;position:sticky;top:0;height:100dvh;flex:none}
+  .k-sidebar .pd-sidebar--full{display:none}
+  .k-scroll{padding-bottom:var(--space-12)}
+}
+@media (min-width:1024px){
+  .k-sidebar .pd-sidebar--full{display:flex}
+  .k-sidebar .pd-sidebar--rail{display:none}
+}
+
+/* Page header */
+.k-header{position:sticky;top:0;z-index:10;background:var(--background);padding-top:env(safe-area-inset-top,0px)}
+.k-header__row{display:flex;align-items:center;gap:var(--space-3);min-height:56px}
+.k-header__row .k-grow{flex:1;min-width:0}
+.k-header h1{font-size:20px;font-weight:700;letter-spacing:-.01em}
+@media (min-width:768px){.k-header .k-mark{display:none}}
+
+.k-section{margin-top:var(--space-8)}
+.k-section > h2{font-size:16px;font-weight:600;margin-bottom:var(--space-3)}
+.k-muted{color:var(--muted-foreground)}
+.k-caption{font-size:13px;color:var(--muted-foreground)}
+
+/* Empty state: the block is allowed here */
+.k-empty{display:grid;justify-items:center;text-align:center;gap:var(--space-3);padding:var(--space-10) var(--space-4)}
+.k-empty h2{font-size:20px;font-weight:700}
+.k-empty p{color:var(--muted-foreground);max-width:36ch}
+
+/* Full-screen centred flow (sign-in, onboarding) */
+.k-flow{min-height:100dvh;display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top,0px) + var(--space-8)) 0 calc(env(safe-area-inset-bottom,0px) + var(--space-6))}
+.k-flow .pd-page{flex:1;display:flex;flex-direction:column}
+.k-flow__foot{margin-top:auto;display:grid;gap:var(--space-3);padding-top:var(--space-8)}
+.k-flow__foot .pd-btn{width:100%}
+
+.k-spinner{display:grid;place-items:center;min-height:50dvh;color:var(--muted-foreground)}
+
+a.pd-btn{text-decoration:none}
+.k-flow .pd-block{align-self:flex-start}

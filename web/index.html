@@ -1,10 +1,22 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="blue-light">
   <head>
     <meta charset="UTF-8" />
-    
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Connected Event Networking</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="Klick: meet someone, Klick with intention, build a relationship worth remembering." />
+    <title>Klick</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <script>
+      // Pick light or dark before first paint so there is no flash. Klick's colour is not chosen yet: blue is the placeholder.
+      (function () {
+        var m = window.matchMedia("(prefers-color-scheme: dark)");
+        var set = function () { document.documentElement.setAttribute("data-theme", "blue-" + (m.matches ? "dark" : "light")); };
+        set();
+        m.addEventListener("change", set);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
