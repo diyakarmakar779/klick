@@ -171,6 +171,25 @@ describe("ingestion and membership", () => {
     expect((await call("ravi", "GET", `/v1/events/${ev}`)).body.wrapUp.followUps).toEqual([]); // follow-ups stay with their owner
   });
 
+  it("saving a suggestion is private, needs the same visibility as matching, and resurfaces until you reach out", async () => {
+    const ev = await onboard("asha");
+    await onboard("ravi");
+    await onboard("hidden_hema", "hidden");
+    expect((await call("asha", "PUT", `/v1/events/${ev}/saves/hidden_hema`, {})).status).toBe(404); // can't save who you can't see
+    expect((await call("hidden_hema", "PUT", `/v1/events/${ev}/saves/ravi`, {})).status).toBe(403); // reciprocal
+    expect((await call("asha", "PUT", `/v1/events/${ev}/saves/ravi`, { reason: "Both into accessibility" })).status).toBe(200);
+    let page = (await call("asha", "GET", `/v1/events/${ev}`)).body;
+    expect(page.saved).toEqual(["ravi"]);
+    expect(page.stillToConnect[0]).toMatchObject({ memberId: "ravi", reason: "Both into accessibility" });
+    expect(JSON.stringify((await call("ravi", "GET", `/v1/events/${ev}`)).body)).not.toContain("Both into accessibility");
+    expect((await call("ravi", "GET", `/v1/events/${ev}`)).body.saved).toEqual([]); // ravi is never told
+    await call("asha", "POST", "/v1/connections", { to: "ravi", eventId: ev, context: "" });
+    page = (await call("asha", "GET", `/v1/events/${ev}`)).body;
+    expect(page.stillToConnect).toEqual([]); // reached out, so no longer a reminder
+    await call("asha", "DELETE", `/v1/events/${ev}/saves/ravi`);
+    expect((await call("asha", "GET", `/v1/events/${ev}`)).body.saved).toEqual([]);
+  });
+
   it("disconnecting a source deletes the memberships it created", async () => {
     await onboard("asha");
     const res = await call("asha", "DELETE", "/v1/sources/mock_luma");

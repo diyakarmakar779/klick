@@ -53,8 +53,9 @@ import {
   shareMemory,
 } from "./db/repos/memories.js";
 import { mockLumaEvents } from "./lib/mockLuma.js";
+import { unsavePerson } from "./db/repos/saves.js";
 import { AiError } from "./ai/client.js";
-import { analyzeMemory, draftFollowUp, draftFollowUpById, eventPeopleDetail, eventPeopleSummary, suggestMatches } from "./services/ai.js";
+import { analyzeMemory, draftFollowUp, draftFollowUpById, eventPeopleDetail, eventPeopleSummary, saveSuggestion, suggestMatches } from "./services/ai.js";
 import { CALENDAR_SCOPE, fetchCalendarEvents } from "./lib/googleCalendar.js";
 import { clientMetadataDocument, fetchLumaEvents, finishLumaAuth, startLumaAuth } from "./lib/lumaMcp.js";
 import { newState, saveOAuthState, takeOAuthState } from "./db/repos/oauthStates.js";
@@ -247,6 +248,8 @@ export function buildServer() {
           metHere: people.metHere,
           alsoGoing: people.alsoGoing,
           wrapUp: people.wrapUp,
+          saved: people.saved,
+          stillToConnect: people.stillToConnect,
           // Going but not findable. Only when the totals are big enough not to single anyone out.
           notShown: going >= MIN_COUNT && notShown >= MIN_COUNT ? notShown : null,
         };
@@ -255,6 +258,17 @@ export function buildServer() {
         const { eventId } = req.params as { eventId: string };
         const { goal } = z.object({ goal: z.string().max(280).nullable() }).parse(req.body);
         return setEventGoal(req.memberId, eventId, goal);
+      });
+      // Save someone worth meeting (private; they're never told). Unsave is always allowed.
+      api.put("/events/:eventId/saves/:memberId", async (req) => {
+        const { eventId, memberId } = req.params as { eventId: string; memberId: string };
+        const { reason } = z.object({ reason: z.string().max(500).nullable().default(null) }).parse(req.body ?? {});
+        return saveSuggestion(req.memberId, eventId, memberId, reason);
+      });
+      api.delete("/events/:eventId/saves/:memberId", async (req) => {
+        const { eventId, memberId } = req.params as { eventId: string; memberId: string };
+        await unsavePerson(req.memberId, eventId, memberId);
+        return { ok: true };
       });
       // "Did you go?" on a past event: the member's own answer, kept apart from provider-verified attendance.
       api.put("/events/:eventId/attendance", async (req) => {
