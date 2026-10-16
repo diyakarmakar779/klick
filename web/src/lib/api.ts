@@ -60,7 +60,9 @@ export const Api = {
   actOnConnection: (id: string, action: "accept" | "decline" | "revoke" | "block", shareFields: ContactField[] = []) =>
     api<Connection>(`/v1/connections/${id}/${action}`, { method: "POST", body: { shareFields } }),
   createQr: (eventId: string | null) => api<{ token: string; expiresAt: string }>("/v1/qr", { method: "POST", body: { eventId } }),
-  previewQr: (token: string) => api(`/v1/qr/${token}`),
+  previewQr: (token: string) => api<QrPreview>(`/v1/qr/${token}`),
+  requestByQr: (qrToken: string, shareFields: ContactField[], context = "") =>
+    api<Connection>("/v1/connections", { method: "POST", body: { qrToken, shareFields, context } }),
 };
 
 export type Visibility = "hidden" | "confirmed_attendees" | "connections";
@@ -184,4 +186,12 @@ export interface Me {
   linkedin: (LinkedInCandidate & { confirmedAt: string }) | null;
   questionnaire: Questionnaire | null;
   onboarding: { step: "identity" | "integrations" | "questionnaire" | "done"; completedAt: string | null };
+}
+
+export interface QrPreview {
+  profile: PublicProfile;
+  eventId: string | null;
+  event: { id: string; title: string } | null;
+  availableContactFields: ContactField[];
+  autoAccepts: boolean;
 }

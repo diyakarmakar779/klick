@@ -241,6 +241,18 @@ describe("QR exchange and field-level sharing", () => {
     expect((await call("mallory", "GET", `/v1/connections/${req.body.id}`)).status).toBe(404);
   });
 
+  it("a QR names its event only when the scanner is on it too", async () => {
+    const ev = await onboard("asha");
+    await call("bob", "PUT", "/v1/me", { displayName: "bob" });
+    const qr = (await call("asha", "POST", "/v1/qr", { eventId: ev })).body;
+    expect((await call("bob", "GET", `/v1/qr/${qr.token}`)).body).toMatchObject({ eventId: null, event: null });
+    expect((await call("bob", "POST", "/v1/connections", { qrToken: qr.token })).body.eventId).toBeNull();
+    await onboard("ravi");
+    const preview = (await call("ravi", "GET", `/v1/qr/${qr.token}`)).body;
+    expect(preview.event).toMatchObject({ id: ev, title: expect.stringContaining("DevFest") });
+    expect((await call("ravi", "POST", "/v1/connections", { qrToken: qr.token })).body.eventId).toBe(ev);
+  });
+
   it("auto-accept honours the recipient's preference but shares nothing until they choose", async () => {
     await call("alice", "PUT", "/v1/me", { displayName: "alice", connectionPreference: "auto_accept", contact: { email: "a@x.com" } });
     await call("bob", "PUT", "/v1/me", { displayName: "bob" });
