@@ -43,12 +43,14 @@ export default function Events() {
     <>
       <Header title="Events" />
       <div className="pd-page k-stack">
-        <div className="pd-seg" role="tablist" aria-label="Which events">
-          {(["upcoming", "past"] as const).map((v) => (
-            <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)}>
-              {v === "upcoming" ? "Upcoming" : "Past"}
-            </button>
-          ))}
+        <div className="k-tabs">
+          <div className="k-tabs__list" role="tablist" aria-label="Which events">
+            {(["upcoming", "past"] as const).map((v) => (
+              <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)}>
+                {v === "upcoming" ? "Upcoming" : "Past"}
+              </button>
+            ))}
+          </div>
         </div>
 
         {error && (
