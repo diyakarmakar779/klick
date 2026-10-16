@@ -11,7 +11,7 @@ import { COLLECTIONS, type Event } from "../db/schema.js";
 import { getMember, publicProfile } from "../db/repos/members.js";
 import { getMembership, visibleAttendees } from "../db/repos/events.js";
 import { getConnectionFor, listConnections } from "../db/repos/connections.js";
-import { getOwnedFollowUp, getOwnedMemory, listMemories, saveFollowUp, saveMemory } from "../db/repos/memories.js";
+import { getOwnedFollowUp, getOwnedMemory, listFollowUps, listMemories, saveFollowUp, saveMemory } from "../db/repos/memories.js";
 
 const DAY = 86400000;
 
@@ -95,9 +95,10 @@ export async function eventPeopleSummary(memberId: string, memberships: EventMem
   );
 }
 
-// Who's going, for the event page. Catch up: the member's accepted Klicks going, each with the member's own
-// latest memory of them (private to the member). Also going: names and roles of others who chose to be found,
-// shown only under the same reciprocal rule as matches. Everyone else is a floored count, never a name.
+// Who's going, for the event page. Catch up: the member's accepted Klicks going. Met here: Klicks made at this
+// event. Each comes with the member's own latest memory of them (private to the member). Also going: names and
+// roles of others who chose to be found, shown only under the same reciprocal rule as matches. Everyone else is a
+// floored count, never a name. Wrap up: the member's own unreviewed memories and open follow-ups from this event.
 export async function eventPeopleDetail(memberId: string, mine: EventMembership) {
   const existing = await listConnections(memberId);
   const accepted = existing.filter((c) => c.status === "accepted");
@@ -109,34 +110,47 @@ export async function eventPeopleDetail(memberId: string, mine: EventMembership)
     const m = theirs[i];
     return !!m && CONFIRMED.includes(m.state) && m.effectiveVisibility !== "hidden";
   });
-  const myMemories = going.length ? await listMemories(memberId) : [];
-  const catchUp = (
-    await Promise.all(
-      going.map(async (c) => {
-        const other = await getMember(otherMember(c, memberId));
-        if (!other) return null;
-        const latest = myMemories
-          .filter((m) => m.connectionId === c.id)
-          .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
-        const metAt = c.eventId ? await getEvent(c.eventId) : null;
-        return {
-          connectionId: c.id,
-          profile: publicProfile(other),
-          memory: latest
-            ? { kind: latest.kind, reviewed: latest.reviewState === "reviewed", text: latest.reviewState === "reviewed" ? latest.text : null }
-            : null,
-          met: { eventTitle: metAt?.title ?? null, at: c.createdAt },
-        };
-      }),
-    )
-  ).filter((x) => !!x);
+  const metHere = accepted.filter((c) => c.eventId === mine.eventId);
+  const [myMemories, myFollowUps] = await Promise.all([listMemories(memberId), listFollowUps(memberId)]);
+  const rows = async (conns: typeof accepted) =>
+    (
+      await Promise.all(
+        conns.map(async (c) => {
+          const other = await getMember(otherMember(c, memberId));
+          if (!other) return null;
+          const latest = myMemories
+            .filter((m) => m.connectionId === c.id)
+            .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
+          const metAt = c.eventId ? await getEvent(c.eventId) : null;
+          return {
+            connectionId: c.id,
+            profile: publicProfile(other),
+            memory: latest
+              ? { kind: latest.kind, reviewed: latest.reviewState === "reviewed", text: latest.reviewState === "reviewed" ? latest.text : null }
+              : null,
+            met: { eventTitle: metAt?.title ?? null, at: c.createdAt },
+          };
+        }),
+      )
+    ).filter((x) => !!x);
 
   const reciprocal = mine.effectiveVisibility === "confirmed_attendees" && CONFIRMED.includes(mine.state);
   const pool = reciprocal ? (await visibleAttendees(mine.eventId, memberId)).filter((p) => !exclude.has(p.memberId)) : [];
   const alsoGoing = (await Promise.all(pool.slice(0, 50).map((p) => getMember(p.memberId))))
     .filter((m) => !!m)
     .map((m) => ({ id: m!.id, displayName: m!.displayName, role: m!.role, company: m!.company, headline: m!.headline }));
-  return { catchUp, alsoGoing };
+
+  const hereIds = new Set(metHere.map((c) => c.id));
+  const firstNames = new Map(
+    (await Promise.all(metHere.map(async (c) => [c.id, (await getMember(otherMember(c, memberId)))?.displayName ?? ""] as const))),
+  );
+  const wrapUp = {
+    toReview: myMemories.filter((m) => m.reviewState === "draft" && (m.eventId === mine.eventId || (m.connectionId && hereIds.has(m.connectionId)))).length,
+    followUps: myFollowUps
+      .filter((f) => hereIds.has(f.connectionId) && ["open", "prompted"].includes(f.status))
+      .map((f) => ({ id: f.id, connectionId: f.connectionId, reason: f.reason, dueAt: f.dueAt, with: firstNames.get(f.connectionId) ?? "" })),
+  };
+  return { catchUp: await rows(going), metHere: await rows(metHere), alsoGoing, wrapUp };
 }
 
 export async function analyzeMemory(memoryId: string, ownerId: string) {

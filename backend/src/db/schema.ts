@@ -148,6 +148,8 @@ export const EventMembership = z.object({
   // Member's choice for this event; null means "use my default".
   visibility: Visibility.nullable(),
   goal: z.string().max(280).nullable().default(null), // "Why are you attending?", used for matching
+  // The member's own answer to "Did you go?" on a past event. Never changes `state`: only a provider can verify attendance.
+  selfReport: z.enum(["went", "didnt"]).nullable().default(null),
   // Denormalized effective visibility so matching can query on it.
   effectiveVisibility: Visibility,
   updatedAt: timestamp,

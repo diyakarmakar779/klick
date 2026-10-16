@@ -219,6 +219,14 @@ export async function setEventGoal(memberId: string, eventId: string, goal: stri
   return updated;
 }
 
+export async function setSelfReport(memberId: string, eventId: string, selfReport: EventMembership["selfReport"]): Promise<EventMembership> {
+  const current = await getMembership(memberId, eventId);
+  if (!current) throw new Error("Not a member of this event");
+  const updated = { ...current, selfReport, updatedAt: new Date() };
+  await db().collection(COLLECTIONS.eventMemberships).doc(current.id).set(updated);
+  return updated;
+}
+
 // Matching pool for an event (rule R2): other members who are confirmed for it and chose to be visible.
 // Only "registered", "host" and "attended" count as confirmed; "invited" and "unknown" never appear.
 export async function visibleAttendees(eventId: string, excludeMemberId: string): Promise<EventMembership[]> {
