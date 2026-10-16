@@ -190,6 +190,34 @@ describe("ingestion and membership", () => {
     expect((await call("asha", "GET", `/v1/events/${ev}`)).body.saved).toEqual([]);
   });
 
+  it("discover finds upcoming events only through accepted Klicks who let Klicks see them", async () => {
+    await onboard("asha");
+    await call("ravi", "PUT", "/v1/me", { displayName: "Ravi Menon", defaultVisibility: "connections" });
+    const [future] = await importEvents("ravi", "google_calendar", [{
+      externalId: "future@google.com", title: "Design Mixer", description: "", startsAt: new Date(Date.now() + 5 * 86400000), state: "registered",
+    }]);
+    expect((await call("asha", "GET", "/v1/discover")).body).toEqual([]); // not Klicks yet
+    expect((await call("asha", "GET", `/v1/discover/${future}`)).status).toBe(404);
+    const req = await call("ravi", "POST", "/v1/connections", { to: "asha", eventId: null, context: "" });
+    await call("asha", "POST", `/v1/connections/${req.body.id}/accept`);
+    const list = (await call("asha", "GET", "/v1/discover")).body;
+    expect(list.map((r: { event: { id: string } }) => r.event.id)).toEqual([future]);
+    expect(list[0].catchUp).toEqual({ count: 1, initials: ["RM"] });
+    expect(list[0].worthMeeting.label).toBe("fewer than 3");
+    const detail = (await call("asha", "GET", `/v1/discover/${future}`)).body;
+    expect(detail.catchUp[0].profile.id).toBe("ravi");
+    expect((await call("outsider", "GET", `/v1/discover/${future}`)).status).toBe(404);
+    expect((await call("asha", "PUT", `/v1/events/${future}/save`)).body.saved).toBe(true);
+    expect((await call("asha", "GET", "/v1/discover")).body[0].saved).toBe(true);
+    await call("asha", "POST", `/v1/events/${future}/plan`);
+    const mine = (await call("asha", "GET", `/v1/events/${future}`)).body;
+    expect(mine.state).toBe("registered");
+    expect(mine.provenance.source).toBe("manual");
+    expect((await call("asha", "GET", "/v1/discover")).body).toEqual([]); // now one of yours
+    await call("ravi", "PUT", `/v1/events/${future}/visibility`, { visibility: "hidden" });
+    expect((await call("outsider", "POST", `/v1/events/${future}/plan`)).status).toBe(404);
+  });
+
   it("disconnecting a source deletes the memberships it created", async () => {
     await onboard("asha");
     const res = await call("asha", "DELETE", "/v1/sources/mock_luma");
