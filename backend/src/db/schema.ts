@@ -13,6 +13,7 @@ export const COLLECTIONS = {
   followUps: "followUps",
   qrTokens: "qrTokens", // short-lived opaque tokens behind each member's QR code
   oauthStates: "oauthStates", // 10-minute PKCE state for provider sign-in; deleted when used
+  saves: "saves", // private bookmarks: people a member wants to remember to meet at an event
 } as const;
 
 const timestamp = z.date();
@@ -237,3 +238,15 @@ export const QrToken = z.object({
   createdAt: timestamp,
 });
 export type QrToken = z.infer<typeof QrToken>;
+
+// ---- Save: a private bookmark of someone worth meeting at an event. Only its owner ever reads it,
+// and the saved person is never told.
+export const Save = z.object({
+  id: z.string(), // `${ownerId}__${eventId}__${memberId}`
+  ownerId: z.string(),
+  eventId: z.string(),
+  memberId: z.string(),
+  reason: z.string().max(500).nullable(), // the suggestion's reason when it was saved, for the owner's own reminder
+  createdAt: timestamp,
+});
+export type Save = z.infer<typeof Save>;

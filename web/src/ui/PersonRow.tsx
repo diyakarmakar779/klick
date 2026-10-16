@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Check, Clock, Lock, MessageCircle, MoreHorizontal, Sparkles } from "lucide-react";
+import { Bookmark, BookmarkCheck, Check, Clock, Lock, MessageCircle, MoreHorizontal, Sparkles } from "lucide-react";
 import type { CatchUp, Match, PublicProfile } from "../lib/api";
 import { initials, roleLine } from "../lib/people";
 import Button from "./Button";
@@ -22,13 +22,17 @@ export function ReasonLine({ text }: { text: string }) {
 export function RecommendedRow({
   match,
   sent,
+  saved,
   onRequest,
+  onToggleSave,
   onHide,
 }: {
   match: Match;
   sent: boolean;
+  saved: boolean;
   onRequest: () => void;
-  onHide: () => void;
+  onToggleSave: () => void;
+  onHide?: () => void;
 }) {
   const [menu, setMenu] = useState(false);
   const p = match.profile;
@@ -42,7 +46,7 @@ export function RecommendedRow({
           {p && roleLine(p) && <p>{roleLine(p)}</p>}
         </div>
       </div>
-      <ReasonLine text={match.reason} />
+      {match.reason && <ReasonLine text={match.reason} />}
       <div className="k-prow__actions">
         {sent ? (
           <span className="k-status k-status--went">
@@ -54,6 +58,11 @@ export function RecommendedRow({
             <Button variant="brand" className="k-grow" onClick={onRequest}>
               Request a Klick
             </Button>
+            <Button variant="outline" aria-pressed={saved} onClick={onToggleSave}>
+              {saved ? <BookmarkCheck className="pd-i" aria-hidden="true" /> : <Bookmark className="pd-i" aria-hidden="true" />}
+              {saved ? "Saved" : "Save"}
+            </Button>
+            {onHide && (
             <div className="k-menu">
               <Button variant="outline" size="icon" aria-label={`More options for ${name}`} aria-expanded={menu} onClick={() => setMenu((m) => !m)}>
                 <MoreHorizontal className="pd-i" aria-hidden="true" />
@@ -66,6 +75,7 @@ export function RecommendedRow({
                 </div>
               )}
             </div>
+            )}
           </>
         )}
       </div>

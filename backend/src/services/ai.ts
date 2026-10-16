@@ -11,6 +11,7 @@ import { COLLECTIONS, type Event } from "../db/schema.js";
 import { getMember, publicProfile } from "../db/repos/members.js";
 import { getMembership, visibleAttendees } from "../db/repos/events.js";
 import { getConnectionFor, listConnections } from "../db/repos/connections.js";
+import { listSaves, savePerson } from "../db/repos/saves.js";
 import { getOwnedFollowUp, getOwnedMemory, listFollowUps, listMemories, saveFollowUp, saveMemory } from "../db/repos/memories.js";
 
 const DAY = 86400000;
@@ -150,7 +151,42 @@ export async function eventPeopleDetail(memberId: string, mine: EventMembership)
       .filter((f) => hereIds.has(f.connectionId) && ["open", "prompted"].includes(f.status))
       .map((f) => ({ id: f.id, connectionId: f.connectionId, reason: f.reason, dueAt: f.dueAt, with: firstNames.get(f.connectionId) ?? "" })),
   };
-  return { catchUp: await rows(going), metHere: await rows(metHere), alsoGoing, wrapUp };
+  // Saved people: ids for the page's Save buttons, and after the event the ones you never sent a request to,
+  // as long as they still let people at this event find them.
+  const saves = await listSaves(memberId, mine.eventId);
+  const contacted = new Set(existing.map((c) => otherMember(c, memberId)));
+  const stillToConnect = (
+    await Promise.all(
+      saves
+        .filter((s) => !contacted.has(s.memberId))
+        .map(async (s) => {
+          const [m, ms] = await Promise.all([getMember(s.memberId), getMembership(s.memberId, mine.eventId)]);
+          if (!m || ms?.effectiveVisibility !== "confirmed_attendees") return null;
+          return { memberId: m.id, reason: s.reason ?? "", starter: "", source: "overlap" as const, profile: publicProfile(m) };
+        }),
+    )
+  ).filter((x) => !!x);
+  return {
+    catchUp: await rows(going),
+    metHere: await rows(metHere),
+    alsoGoing,
+    wrapUp,
+    saved: saves.map((s) => s.memberId),
+    stillToConnect,
+  };
+}
+
+// Save someone worth meeting. Same rule as seeing them at all: the member must be findable here too,
+// and the person must be going and have chosen to be found.
+export async function saveSuggestion(memberId: string, eventId: string, targetId: string, reason: string | null) {
+  const mine = await getMembership(memberId, eventId);
+  if (!mine) throw new ConsentError("Not on this event", 404);
+  if (mine.effectiveVisibility !== "confirmed_attendees" || !CONFIRMED.includes(mine.state)) {
+    throw new ConsentError("Turn on discoverability for this event to save people", 403);
+  }
+  const pool = await visibleAttendees(eventId, memberId);
+  if (!pool.some((p) => p.memberId === targetId)) throw new ConsentError("Not someone you can see at this event", 404);
+  return savePerson(memberId, eventId, targetId, reason);
 }
 
 export async function analyzeMemory(memoryId: string, ownerId: string) {

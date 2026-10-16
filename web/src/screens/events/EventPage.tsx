@@ -37,8 +37,10 @@ export default function EventPage() {
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [sent, setSent] = useState<Set<string>>(new Set());
   const [asking, setAsking] = useState<Match | null>(null);
+  const [saved, setSaved] = useState<Set<string>>(new Set());
 
   useEffect(() => setGoal(data?.goal ?? ""), [data?.goal]);
+  useEffect(() => setSaved(new Set(data?.saved ?? [])), [data?.saved]);
 
   const visible = data?.effectiveVisibility === "confirmed_attendees";
   const matchable = !!data && canBeMatched(data.state);
@@ -110,6 +112,25 @@ export default function EventPage() {
       setActionError(e instanceof Error ? e.message : String(e));
     } finally {
       setSaving(null);
+    }
+  }
+
+  // Saving is private and instant; the switch flips back if the server says no.
+  async function toggleSave(m: Match) {
+    const on = !saved.has(m.memberId);
+    const flip = (v: boolean) =>
+      setSaved((s) => {
+        const next = new Set(s);
+        if (v) next.add(m.memberId);
+        else next.delete(m.memberId);
+        return next;
+      });
+    flip(on);
+    try {
+      await (on ? Api.savePerson(eventId, m.memberId, m.reason || null) : Api.unsavePerson(eventId, m.memberId));
+    } catch (e) {
+      flip(!on);
+      setActionError(e instanceof Error ? e.message : String(e));
     }
   }
 
@@ -343,6 +364,25 @@ export default function EventPage() {
           </section>
         )}
 
+        {past && data.stillToConnect.length > 0 && (
+          <section className="k-esection">
+            <div className="k-tier">
+              <SectionHead title="Still want to connect?" />
+              <p className="k-muted k-tier__hint">You saved {data.stillToConnect.length === 1 ? "this person" : "these people"} for this event. Only you can see this.</p>
+              {data.stillToConnect.map((m) => (
+                <RecommendedRow
+                  key={m.memberId}
+                  match={m}
+                  sent={sent.has(m.memberId)}
+                  saved={saved.has(m.memberId)}
+                  onRequest={() => setAsking(m)}
+                  onToggleSave={() => toggleSave(m)}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
         <section className="k-esection">
           {!past && <SectionHead title="Who's going" />}
 
@@ -370,7 +410,9 @@ export default function EventPage() {
                       key={m.memberId}
                       match={m}
                       sent={sent.has(m.memberId)}
+                      saved={saved.has(m.memberId)}
                       onRequest={() => setAsking(m)}
+                      onToggleSave={() => toggleSave(m)}
                       onHide={() => setHidden((s) => new Set(s).add(m.memberId))}
                     />
                   ))}
