@@ -175,7 +175,7 @@ a.k-ecard:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
 .k-qr__code--loading{background:var(--muted)}
 .k-qr__timer{display:flex;align-items:center;gap:var(--space-1);font-size:13px;font-variant-numeric:tabular-nums}
 .k-qr-page select.pd-input{appearance:auto}
-.k-scan{position:relative;border-radius:var(--radius-xl);overflow:hidden;background:#000;aspect-ratio:3/4}
+.k-scan{position:relative;border-radius:var(--radius-xl);overflow:hidden;background:#000;aspect-ratio:1}
 .k-scan video{width:100%;height:100%;object-fit:cover;display:block}
 .k-scan__frame{position:absolute;inset:18%;border:3px solid #fff;border-radius:var(--radius-lg);box-shadow:0 0 0 999px rgb(0 0 0 / .35)}
 
@@ -339,16 +339,6 @@ a.k-erow:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
 .k-prof__edit .pd-i{width:13px;height:13px}
 .k-prof__actions{display:flex;gap:8px}
 .k-prof__actions > *{flex:1}
-.k-city{position:relative;height:300px;margin:-8px -16px -12px;overflow:hidden;isolation:isolate;perspective:900px;perspective-origin:50% 40%}
-.k-city__stage{position:absolute;left:50%;top:14px;transform-style:preserve-3d;transform:rotateX(56deg) rotateZ(-42deg) scale(.88)}
-.k-city__grid{position:absolute;inset:-450px;transform:translateZ(-2px);background-image:linear-gradient(#e4e4e4 1px,transparent 1px),linear-gradient(90deg,#e4e4e4 1px,transparent 1px);background-size:27px 27px;-webkit-mask-image:radial-gradient(circle at center,#000 18%,transparent 62%);mask-image:radial-gradient(circle at center,#000 18%,transparent 62%)}
-.k-city__plate{position:absolute;inset:0;border-radius:6px;background:#fff;transform:translateZ(-1px)}
-.k-city__piece{position:absolute;width:var(--cell);height:var(--cell);transform-style:preserve-3d}
-.k-city__piece i{position:absolute;left:0;top:0;width:var(--cell);height:var(--cell)}
-.k-city__piece .k-city__s1{top:var(--cell);transform-origin:top;transform:rotateX(90deg);filter:brightness(.96)}
-.k-city__piece .k-city__s2{transform-origin:left;transform:rotateY(-90deg);filter:brightness(.78)}
-.k-city__label{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);white-space:nowrap;display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px;border-radius:9999px;background:var(--card,#fff);border:1px solid var(--border);font-size:12px;font-weight:600}
-.k-city__label .pd-i{width:13px;height:13px}
 .k-prof__cards{position:relative;z-index:1;display:flex;flex-direction:column;gap:12px}
 .k-stats{display:flex;align-items:stretch;padding:16px 8px;background:var(--card,#fff);border:1px solid var(--border);border-radius:22px}
 .k-stat{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px}
@@ -393,3 +383,20 @@ a.k-erow:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
 .k-account b{display:block;font-size:15px}
 .k-account small{display:block;font-size:13px;color:var(--muted-foreground)}
 .k-account__ok{color:var(--brand-text)}
+
+/* Profile: your blocks are your QR */
+.k-prof__qr{display:flex;flex-direction:column;align-items:center;gap:8px}
+.k-prof__qr .k-blockqr__stage{max-height:420px}
+.k-prof__qr-loading{width:100%;max-height:420px}
+.k-prof__qrinfo{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%;text-align:center}
+.k-prof__qrinfo > p{margin:0;font-size:13.5px}
+.k-prof__met{display:flex;flex-direction:column;gap:4px;width:100%;max-width:360px;text-align:left;font-size:13px;font-weight:600}
+.k-prof__met select.pd-input{appearance:auto}
+
+/* Scanner with a paste fallback */
+.k-scan__wait{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:13px}
+.k-paste{display:flex;flex-direction:column;gap:8px;padding:16px;border:1px solid var(--border);border-radius:16px;background:var(--card,#fff)}
+.k-paste label{font-size:14px;color:var(--muted-foreground)}
+.k-paste label b{color:var(--foreground)}
+.k-paste__row{display:flex;gap:8px}
+.k-paste__row .pd-input{flex:1;min-width:0}
