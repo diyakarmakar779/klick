@@ -120,6 +120,27 @@ describe("ingestion and membership", () => {
     expect((await call("outsider", "GET", `/v1/events/${ev}`)).status).toBe(404);
   });
 
+  it("events list carries a people signal: initials and counts only, reciprocal and excluding hidden members", async () => {
+    const ev = await onboard("asha");
+    await onboard("ravi");
+    await onboard("meera");
+    await onboard("hidden_hema", "hidden");
+    await call("meera", "PUT", "/v1/me", { displayName: "Meera Iyer" });
+    const row = async (id: string) =>
+      (await call(id, "GET", "/v1/events")).body.find((e: { event: { id: string } }) => e.event.id === ev).people;
+    let people = await row("asha");
+    expect(people.worthMeeting.count).toBe(2); // ravi and meera, not hidden_hema
+    expect(people.worthMeeting.initials).toContain("MI");
+    expect(people.catchUp).toEqual({ count: 0, initials: [] });
+    const req = await call("ravi", "POST", "/v1/connections", { to: "asha", eventId: ev, context: "DevFest" });
+    await call("asha", "POST", `/v1/connections/${req.body.id}/accept`);
+    people = await row("asha");
+    expect(people.catchUp.count).toBe(1); // ravi moves from worth meeting to catch up
+    expect(people.worthMeeting.count).toBe(1);
+    expect(JSON.stringify(people)).not.toMatch(/ravi|meera|hema/i);
+    expect((await row("hidden_hema")).worthMeeting.count).toBe(0); // hidden members see no one
+  });
+
   it("disconnecting a source deletes the memberships it created", async () => {
     await onboard("asha");
     const res = await call("asha", "DELETE", "/v1/sources/mock_luma");

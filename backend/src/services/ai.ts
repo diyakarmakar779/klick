@@ -54,6 +54,47 @@ export async function suggestMatches(memberId: string, eventId: string) {
   return { ai, matches: matches.map((m) => ({ ...m, profile: profiles.get(m.memberId) })) };
 }
 
+const CONFIRMED = ["registered", "host", "attended"];
+const initials = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]!.toUpperCase())
+    .join("");
+
+// People signal for the events list: counts and initials only, never names or profiles.
+// Catch up is the member's own accepted Klicks going. Worth meeting follows the same reciprocal rule as
+// matches: only when the member is confirmed and discoverable here, and only among others who chose to be found.
+export async function eventPeopleSummary(memberId: string, memberships: EventMembership[]) {
+  const existing = await listConnections(memberId);
+  const accepted = existing.filter((c) => c.status === "accepted").map((c) => otherMember(c, memberId));
+  const exclude = new Set(
+    existing.filter((c) => ["accepted", "pending", "blocked"].includes(c.status)).map((c) => otherMember(c, memberId)),
+  );
+  const names = new Map<string, string>();
+  const nameOf = async (id: string) => {
+    if (!names.has(id)) names.set(id, initials((await getMember(id))?.displayName ?? ""));
+    return names.get(id)!;
+  };
+  const signal = async (ids: string[]) => ({ count: ids.length, initials: await Promise.all(ids.slice(0, 3).map(nameOf)) });
+
+  return Promise.all(
+    memberships.map(async (mine) => {
+      const theirs = await Promise.all(accepted.map((id) => getMembership(id, mine.eventId)));
+      const catchUp = accepted.filter((_, i) => {
+        const m = theirs[i];
+        return !!m && CONFIRMED.includes(m.state) && m.effectiveVisibility !== "hidden";
+      });
+      const reciprocal = mine.effectiveVisibility === "confirmed_attendees" && CONFIRMED.includes(mine.state);
+      const worth = reciprocal
+        ? (await visibleAttendees(mine.eventId, memberId)).map((p) => p.memberId).filter((id) => !exclude.has(id))
+        : [];
+      return { eventId: mine.eventId, worthMeeting: await signal(worth), catchUp: await signal(catchUp) };
+    }),
+  );
+}
+
 export async function analyzeMemory(memoryId: string, ownerId: string) {
   const memory = await getOwnedMemory(memoryId, ownerId);
   const owner = await getMember(ownerId);

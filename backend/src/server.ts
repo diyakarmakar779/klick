@@ -52,7 +52,7 @@ import {
 } from "./db/repos/memories.js";
 import { mockLumaEvents } from "./lib/mockLuma.js";
 import { AiError } from "./ai/client.js";
-import { analyzeMemory, draftFollowUp, draftFollowUpById, suggestMatches } from "./services/ai.js";
+import { analyzeMemory, draftFollowUp, draftFollowUpById, eventPeopleSummary, suggestMatches } from "./services/ai.js";
 import { CALENDAR_SCOPE, fetchCalendarEvents } from "./lib/googleCalendar.js";
 import { clientMetadataDocument, fetchLumaEvents, finishLumaAuth, startLumaAuth } from "./lib/lumaMcp.js";
 import { newState, saveOAuthState, takeOAuthState } from "./db/repos/oauthStates.js";
@@ -203,8 +203,10 @@ export function buildServer() {
       });
 
       // ---- Events and memberships
-      api.get("/events", async (req) =>
-        (await listMyMemberships(req.memberId)).map(({ membership, event }) => ({
+      api.get("/events", async (req) => {
+        const mine = await listMyMemberships(req.memberId);
+        const people = await eventPeopleSummary(req.memberId, mine.map((m) => m.membership));
+        return mine.map(({ membership, event }, i) => ({
           event,
           state: membership.state,
           label: safeWording(membership.state, event.title),
@@ -212,8 +214,9 @@ export function buildServer() {
           visibility: membership.visibility,
           effectiveVisibility: membership.effectiveVisibility,
           goal: membership.goal,
-        })),
-      );
+          people: { worthMeeting: people[i].worthMeeting, catchUp: people[i].catchUp },
+        }));
+      });
       // Event page: details plus counts. Only for members who have this event themselves (R1); no guest list (R11).
       api.get("/events/:eventId", async (req, reply) => {
         const { eventId } = req.params as { eventId: string };
