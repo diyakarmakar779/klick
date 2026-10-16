@@ -137,7 +137,18 @@ export interface EventPage {
   goal: string | null;
   onPlatformGoing: Count;
   discoverable: Count;
-  connectionsGoing: PublicProfile[];
+  syncedAt: string | null;
+  catchUp: CatchUp[];
+  alsoGoing: Array<Pick<PublicProfile, "id" | "displayName" | "role" | "company" | "headline">>;
+  notShown: number | null;
+}
+
+// One of your Klicks going, with your own latest memory of them. The memory is private to you.
+export interface CatchUp {
+  connectionId: string;
+  profile: PublicProfile;
+  memory: { kind: "text" | "voice" | "photo"; reviewed: boolean; text: string | null } | null;
+  met: { eventTitle: string | null; at: string };
 }
 
 export interface Match {
