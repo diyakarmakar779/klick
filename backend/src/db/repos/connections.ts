@@ -1,7 +1,7 @@
 import { getDb, fromFirestore } from "../firestore.js";
 import { COLLECTIONS, Connection, type ContactField } from "../schema.js";
 import { canRequest, connectionId, ConsentError, nextStatus, otherMember } from "../../domain/consent.js";
-import { getMembership } from "./events.js";
+import { getEvent, getMembership } from "./events.js";
 import { getMember, publicProfile } from "./members.js";
 
 const col = () => getDb().collection(COLLECTIONS.connections);
@@ -120,4 +120,24 @@ export async function connectionView(id: string, memberId: string) {
     sharedContact,
     iShare: conn.sharedFields[memberId] ?? [],
   };
+}
+
+// Klicks tab: each connection with the other person's public profile and the event it came from.
+// Contact details appear only once accepted, and only the fields the other person chose to share.
+export async function listConnectionCards(memberId: string, status?: Connection["status"]) {
+  const conns = await listConnections(memberId, status);
+  return Promise.all(
+    conns.map(async (conn) => {
+      const otherId = otherMember(conn, memberId);
+      const [other, event] = await Promise.all([getMember(otherId), conn.eventId ? getEvent(conn.eventId) : null]);
+      const fields = conn.status === "accepted" ? conn.sharedFields[otherId] ?? [] : [];
+      return {
+        connection: conn,
+        incoming: conn.requestedBy !== memberId,
+        other: other ? publicProfile(other) : null,
+        event: event ? { id: event.id, title: event.title, startsAt: event.startsAt } : null,
+        sharedContact: Object.fromEntries(fields.filter((f) => other?.contact[f]).map((f) => [f, other!.contact[f]])),
+      };
+    }),
+  );
 }

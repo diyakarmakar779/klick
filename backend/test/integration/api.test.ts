@@ -139,7 +139,11 @@ describe("consent-aware exchange, memories and follow-ups", () => {
     const connId = req.body.id;
     expect((await call("asha", "POST", `/v1/connections/${connId}/accept`)).status).toBe(403); // requester can't self-accept
     expect((await call("asha", "POST", "/v1/connections", { to: "ravi", eventId: ev })).status).toBe(409); // no duplicates
+    const incoming = (await call("ravi", "GET", "/v1/connections?status=pending")).body;
+    expect(incoming).toHaveLength(1);
+    expect(incoming[0]).toMatchObject({ incoming: true, other: { id: "asha" }, event: { id: ev }, sharedContact: {} });
     expect((await call("ravi", "POST", `/v1/connections/${connId}/accept`)).body.status).toBe("accepted");
+    expect((await call("asha", "GET", "/v1/connections")).body[0]).toMatchObject({ incoming: false, other: { id: "ravi" } });
 
     const mem = await call("asha", "POST", "/v1/memories", { kind: "text", text: "Works on flood-alert SMS", connectionId: connId });
     expect(mem.body.aboutMemberIds).toEqual(["ravi"]);
