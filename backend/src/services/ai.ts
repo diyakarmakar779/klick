@@ -95,6 +95,50 @@ export async function eventPeopleSummary(memberId: string, memberships: EventMem
   );
 }
 
+// Who's going, for the event page. Catch up: the member's accepted Klicks going, each with the member's own
+// latest memory of them (private to the member). Also going: names and roles of others who chose to be found,
+// shown only under the same reciprocal rule as matches. Everyone else is a floored count, never a name.
+export async function eventPeopleDetail(memberId: string, mine: EventMembership) {
+  const existing = await listConnections(memberId);
+  const accepted = existing.filter((c) => c.status === "accepted");
+  const exclude = new Set(
+    existing.filter((c) => ["accepted", "pending", "blocked"].includes(c.status)).map((c) => otherMember(c, memberId)),
+  );
+  const theirs = await Promise.all(accepted.map((c) => getMembership(otherMember(c, memberId), mine.eventId)));
+  const going = accepted.filter((_, i) => {
+    const m = theirs[i];
+    return !!m && CONFIRMED.includes(m.state) && m.effectiveVisibility !== "hidden";
+  });
+  const myMemories = going.length ? await listMemories(memberId) : [];
+  const catchUp = (
+    await Promise.all(
+      going.map(async (c) => {
+        const other = await getMember(otherMember(c, memberId));
+        if (!other) return null;
+        const latest = myMemories
+          .filter((m) => m.connectionId === c.id)
+          .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0];
+        const metAt = c.eventId ? await getEvent(c.eventId) : null;
+        return {
+          connectionId: c.id,
+          profile: publicProfile(other),
+          memory: latest
+            ? { kind: latest.kind, reviewed: latest.reviewState === "reviewed", text: latest.reviewState === "reviewed" ? latest.text : null }
+            : null,
+          met: { eventTitle: metAt?.title ?? null, at: c.createdAt },
+        };
+      }),
+    )
+  ).filter((x) => !!x);
+
+  const reciprocal = mine.effectiveVisibility === "confirmed_attendees" && CONFIRMED.includes(mine.state);
+  const pool = reciprocal ? (await visibleAttendees(mine.eventId, memberId)).filter((p) => !exclude.has(p.memberId)) : [];
+  const alsoGoing = (await Promise.all(pool.slice(0, 50).map((p) => getMember(p.memberId))))
+    .filter((m) => !!m)
+    .map((m) => ({ id: m!.id, displayName: m!.displayName, role: m!.role, company: m!.company, headline: m!.headline }));
+  return { catchUp, alsoGoing };
+}
+
 export async function analyzeMemory(memoryId: string, ownerId: string) {
   const memory = await getOwnedMemory(memoryId, ownerId);
   const owner = await getMember(ownerId);

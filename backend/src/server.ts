@@ -11,6 +11,7 @@ import {
   disconnectSource,
   pruneSource,
   eventStats,
+  MIN_COUNT,
   getEvent,
   getMembership,
   importEvents,
@@ -52,7 +53,7 @@ import {
 } from "./db/repos/memories.js";
 import { mockLumaEvents } from "./lib/mockLuma.js";
 import { AiError } from "./ai/client.js";
-import { analyzeMemory, draftFollowUp, draftFollowUpById, eventPeopleSummary, suggestMatches } from "./services/ai.js";
+import { analyzeMemory, draftFollowUp, draftFollowUpById, eventPeopleDetail, eventPeopleSummary, suggestMatches } from "./services/ai.js";
 import { CALENDAR_SCOPE, fetchCalendarEvents } from "./lib/googleCalendar.js";
 import { clientMetadataDocument, fetchLumaEvents, finishLumaAuth, startLumaAuth } from "./lib/lumaMcp.js";
 import { newState, saveOAuthState, takeOAuthState } from "./db/repos/oauthStates.js";
@@ -223,8 +224,13 @@ export function buildServer() {
         const membership = await getMembership(req.memberId, eventId);
         if (!membership) return reply.code(404).send({ error: "Not found" });
         const event = (await getEvent(eventId))!;
-        const stats = await eventStats(eventId, req.memberId);
-        const friends = await Promise.all(stats.connectionsGoing.map((id) => getMember(id)));
+        const { connectionsGoing: _ids, ...stats } = await eventStats(eventId, req.memberId);
+        const [people, sources] = await Promise.all([
+          eventPeopleDetail(req.memberId, membership),
+          listSourceConnections(req.memberId),
+        ]);
+        const going = stats.onPlatformGoing.count ?? 0;
+        const notShown = Math.max(0, going - (stats.discoverable.count ?? 0));
         return {
           event,
           state: membership.state,
@@ -234,7 +240,11 @@ export function buildServer() {
           effectiveVisibility: membership.effectiveVisibility,
           goal: membership.goal,
           ...stats,
-          connectionsGoing: friends.filter((m) => !!m).map((m) => publicProfile(m!)),
+          syncedAt: sources.find((c) => c.provider === membership.provenance.source)?.lastSyncAt ?? null,
+          catchUp: people.catchUp,
+          alsoGoing: people.alsoGoing,
+          // Going but not findable. Only when the totals are big enough not to single anyone out.
+          notShown: going >= MIN_COUNT && notShown >= MIN_COUNT ? notShown : null,
         };
       });
       api.put("/events/:eventId/goal", async (req) => {

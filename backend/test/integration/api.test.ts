@@ -111,11 +111,22 @@ describe("ingestion and membership", () => {
     page = (await call("asha", "GET", `/v1/events/${ev}`)).body;
     expect(page.onPlatformGoing).toEqual({ count: 4, label: "4" });
     expect(page.discoverable.count).toBe(3);
-    expect(page.connectionsGoing).toEqual([]); // ravi is going but isn't asha's connection
+    expect(page.catchUp).toEqual([]); // ravi is going but isn't asha's connection
+    expect(page.alsoGoing.map((p: { id: string }) => p.id).sort()).toEqual(["meera", "ravi"]); // chose to be found
+    expect(page.notShown).toBeNull(); // only one person isn't findable: too few to count
     const req = await call("ravi", "POST", "/v1/connections", { to: "asha", eventId: ev, context: "DevFest" });
     await call("asha", "POST", `/v1/connections/${req.body.id}/accept`);
     page = (await call("asha", "GET", `/v1/events/${ev}`)).body;
-    expect(page.connectionsGoing.map((p: { id: string }) => p.id)).toEqual(["ravi"]);
+    expect(page.catchUp.map((c: { profile: { id: string } }) => c.profile.id)).toEqual(["ravi"]);
+    expect(page.catchUp[0].met.eventTitle).toBe("DevFest Pune 2026");
+    expect(page.catchUp[0].memory).toBeNull();
+    expect(page.alsoGoing.map((p: { id: string }) => p.id)).toEqual(["meera"]); // ravi moved to catch up
+    await call("asha", "POST", "/v1/memories", { kind: "text", text: "Talked about Pune meetups", storagePath: null, connectionId: req.body.id, eventId: ev });
+    page = (await call("asha", "GET", `/v1/events/${ev}`)).body;
+    expect(page.catchUp[0].memory).toMatchObject({ reviewed: true, text: "Talked about Pune meetups" }); // my own note
+    const ravisView = (await call("ravi", "GET", `/v1/events/${ev}`)).body;
+    expect(JSON.stringify(ravisView)).not.toContain("Pune meetups"); // memories stay with their author
+    expect((await call("hidden_hema", "GET", `/v1/events/${ev}`)).body.alsoGoing).toEqual([]); // reciprocal
     expect(JSON.stringify(page)).not.toContain("hidden_hema");
     expect((await call("outsider", "GET", `/v1/events/${ev}`)).status).toBe(404);
   });
