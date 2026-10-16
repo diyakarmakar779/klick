@@ -59,6 +59,20 @@ export const Api = {
   connections: (status?: Connection["status"]) => api<KlickItem[]>(`/v1/connections${status ? `?status=${status}` : ""}`),
   actOnConnection: (id: string, action: "accept" | "decline" | "revoke" | "block", shareFields: ContactField[] = []) =>
     api<Connection>(`/v1/connections/${id}/${action}`, { method: "POST", body: { shareFields } }),
+  connection: (id: string) => api<{ connection: Connection; other: PublicProfile | null; sharedContact: Partial<Record<ContactField, string>>; iShare: ContactField[] }>(`/v1/connections/${id}`),
+  upload: (kind: "voice" | "photo", contentType: string) => api<{ storagePath: string; url: string }>("/v1/uploads", { method: "POST", body: { kind, contentType } }),
+  memories: (connectionId?: string) => api<Memory[]>(`/v1/memories${connectionId ? `?connectionId=${connectionId}` : ""}`),
+  createMemory: (body: { kind: Memory["kind"]; text: string | null; storagePath: string | null; connectionId: string | null; eventId: string | null }) =>
+    api<Memory>("/v1/memories", { method: "POST", body }),
+  analyzeMemory: (id: string) => api<Memory>(`/v1/memories/${id}/analyze`, { method: "POST" }),
+  reviewMemory: (id: string, text: string) => api<Memory>(`/v1/memories/${id}/review`, { method: "POST", body: { text } }),
+  shareMemory: (id: string, withId: string) => api<Memory>(`/v1/memories/${id}/share`, { method: "POST", body: { with: withId } }),
+  deleteMemory: (id: string) => api(`/v1/memories/${id}`, { method: "DELETE" }),
+  followUps: () => api<FollowUp[]>("/v1/followups"),
+  createFollowUp: (body: { connectionId: string; reason: string; dueAt: string; sourceMemoryId: string | null }) =>
+    api<FollowUp>("/v1/followups", { method: "POST", body }),
+  draftFollowUp: (id: string, simpleLanguage: boolean) => api<FollowUp>(`/v1/followups/${id}/draft`, { method: "POST", body: { simpleLanguage } }),
+  setFollowUp: (id: string, status: "sent" | "done" | "dismissed") => api<FollowUp>(`/v1/followups/${id}/${status}`, { method: "POST" }),
   createQr: (eventId: string | null) => api<{ token: string; expiresAt: string }>("/v1/qr", { method: "POST", body: { eventId } }),
   previewQr: (token: string) => api<QrPreview>(`/v1/qr/${token}`),
   requestByQr: (qrToken: string, shareFields: ContactField[], context = "") =>
@@ -194,4 +208,35 @@ export interface QrPreview {
   event: { id: string; title: string } | null;
   availableContactFields: ContactField[];
   autoAccepts: boolean;
+}
+
+export interface Memory {
+  id: string;
+  connectionId: string | null;
+  eventId: string | null;
+  aboutMemberIds: string[];
+  kind: "text" | "voice" | "photo";
+  text: string | null;
+  storagePath: string | null;
+  aiDraft: string | null;
+  ai: {
+    summary: string;
+    topics: string[];
+    promises: Array<{ text: string; owner: "me" | "them" }>;
+    suggestedFollowUp: { reason: string; dueAt: string } | null;
+  } | null;
+  reviewState: "draft" | "reviewed";
+  sharedWith: string[];
+  createdAt: string;
+}
+
+export interface FollowUp {
+  id: string;
+  connectionId: string;
+  reason: string;
+  dueAt: string;
+  status: "open" | "prompted" | "sent" | "done" | "dismissed";
+  draft: string | null;
+  whyNow: string | null;
+  sourceMemoryId: string | null;
 }

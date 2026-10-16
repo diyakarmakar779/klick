@@ -35,6 +35,14 @@ gcloud firestore databases describe --database='(default)' >/dev/null 2>&1 || \
 echo "==> Media bucket (private, uniform access)"
 gcloud storage buckets describe "gs://$BUCKET" >/dev/null 2>&1 || \
   gcloud storage buckets create "gs://$BUCKET" --location="$REGION" --uniform-bucket-level-access --public-access-prevention
+# The web app uploads voice notes and photos straight to the bucket with a signed URL, so the browser needs CORS.
+CORS_FILE="$(mktemp)"
+cat > "$CORS_FILE" <<CORS
+[{"origin": ["${WEB_URL:-https://$PROJECT_ID.web.app}", "https://$PROJECT_ID.firebaseapp.com", "http://localhost:5173"],
+  "method": ["PUT"], "responseHeader": ["Content-Type"], "maxAgeSeconds": 3600}]
+CORS
+gcloud storage buckets update "gs://$BUCKET" --cors-file="$CORS_FILE" >/dev/null
+rm -f "$CORS_FILE"
 
 echo "==> Service account for Cloud Run (least privilege)"
 gcloud iam service-accounts describe "$SA" >/dev/null 2>&1 || \

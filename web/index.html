@@ -8,15 +8,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <script>
-      // Pick light or dark before first paint so there is no flash. Klick's colour is not chosen yet: blue is the placeholder.
-      (function () {
-        var m = window.matchMedia("(prefers-color-scheme: dark)");
-        var set = function () { document.documentElement.setAttribute("data-theme", "blue-" + (m.matches ? "dark" : "light")); };
-        set();
-        m.addEventListener("change", set);
-      })();
-    </script>
+    <!-- Light theme only for now; the dark tokens stay in tokens.css for later. Blue is a placeholder for Klick's colour. -->
+    <meta name="color-scheme" content="light" />
   </head>
   <body>
     <div id="root"></div>
