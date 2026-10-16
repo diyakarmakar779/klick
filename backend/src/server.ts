@@ -225,6 +225,10 @@ export function buildServer() {
           event,
           state: membership.state,
           label: safeWording(membership.state, event.title),
+          provenance: { source: membership.provenance.source },
+          visibility: membership.visibility,
+          effectiveVisibility: membership.effectiveVisibility,
+          goal: membership.goal,
           ...stats,
           connectionsGoing: friends.filter((m) => !!m).map((m) => publicProfile(m!)),
         };
