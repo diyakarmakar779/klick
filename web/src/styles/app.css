@@ -276,3 +276,17 @@ a.k-ecard:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
 .k-menu__list button{display:block;width:100%;height:40px;padding:0 12px;text-align:left;background:none;border:0;border-radius:8px;font:500 14px var(--font-sans);color:var(--foreground);cursor:pointer}
 .k-menu__list button:hover{background:var(--muted)}
 .k-prow__actions > .pd-btn--brand{flex:1}
+
+/* Event page, past mode */
+.k-ehero--past{background:var(--muted);border-bottom-color:var(--border)}
+.k-ehero--past .k-ehero__poster{background:#e5e5e5;color:var(--muted-foreground)}
+.k-locked .k-row{margin-top:6px;justify-content:flex-start}
+.k-wrap{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:16px;overflow:hidden}
+.k-wrap__row{display:flex;align-items:center;gap:12px;padding:14px 16px;color:inherit;text-decoration:none;transition:background-color .15s}
+.k-wrap__row + .k-wrap__row{border-top:1px solid var(--border)}
+.k-wrap__row:hover{background:var(--muted)}
+.k-wrap__row > .pd-i:first-child{width:20px;height:20px;flex:none;color:var(--warning)}
+.k-wrap__row > .pd-i:last-child{width:18px;height:18px;flex:none;color:var(--muted-foreground)}
+.k-wrap__row .k-grow{display:flex;flex-direction:column;gap:2px;min-width:0}
+.k-wrap__row b{font-size:15px;font-weight:600}
+.k-wrap__row small{font-size:13px;color:var(--muted-foreground)}

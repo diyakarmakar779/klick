@@ -18,6 +18,7 @@ import {
   listMyMemberships,
   listSourceConnections,
   setEventGoal,
+  setSelfReport,
   setEventVisibility,
   visibleAttendees,
 } from "./db/repos/events.js";
@@ -241,8 +242,11 @@ export function buildServer() {
           goal: membership.goal,
           ...stats,
           syncedAt: sources.find((c) => c.provider === membership.provenance.source)?.lastSyncAt ?? null,
+          selfReport: membership.selfReport ?? null,
           catchUp: people.catchUp,
+          metHere: people.metHere,
           alsoGoing: people.alsoGoing,
+          wrapUp: people.wrapUp,
           // Going but not findable. Only when the totals are big enough not to single anyone out.
           notShown: going >= MIN_COUNT && notShown >= MIN_COUNT ? notShown : null,
         };
@@ -251,6 +255,12 @@ export function buildServer() {
         const { eventId } = req.params as { eventId: string };
         const { goal } = z.object({ goal: z.string().max(280).nullable() }).parse(req.body);
         return setEventGoal(req.memberId, eventId, goal);
+      });
+      // "Did you go?" on a past event: the member's own answer, kept apart from provider-verified attendance.
+      api.put("/events/:eventId/attendance", async (req) => {
+        const { eventId } = req.params as { eventId: string };
+        const { selfReport } = z.object({ selfReport: z.enum(["went", "didnt"]).nullable() }).parse(req.body);
+        return setSelfReport(req.memberId, eventId, selfReport);
       });
       api.put("/events/:eventId/visibility", async (req) => {
         const { eventId } = req.params as { eventId: string };

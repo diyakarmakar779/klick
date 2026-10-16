@@ -152,6 +152,25 @@ describe("ingestion and membership", () => {
     expect((await row("hidden_hema")).worthMeeting.count).toBe(0); // hidden members see no one
   });
 
+  it("past event: met here, wrap up, and a self-reported answer that never counts as verified", async () => {
+    const ev = await onboard("asha");
+    await onboard("ravi");
+    const req = await call("ravi", "POST", "/v1/connections", { to: "asha", eventId: ev, context: "DevFest" });
+    await call("asha", "POST", `/v1/connections/${req.body.id}/accept`);
+    await call("asha", "POST", "/v1/followups", { connectionId: req.body.id, reason: "Send the deck", dueAt: new Date(Date.now() + 86400000).toISOString(), sourceMemoryId: null });
+    let page = (await call("asha", "GET", `/v1/events/${ev}`)).body;
+    expect(page.metHere.map((c: { profile: { id: string } }) => c.profile.id)).toEqual(["ravi"]);
+    expect(page.wrapUp.followUps).toHaveLength(1);
+    expect(page.wrapUp.followUps[0]).toMatchObject({ reason: "Send the deck", with: "ravi" });
+    expect(page.wrapUp.toReview).toBe(0);
+    expect(page.selfReport).toBeNull();
+    await call("asha", "PUT", `/v1/events/${ev}/attendance`, { selfReport: "went" });
+    page = (await call("asha", "GET", `/v1/events/${ev}`)).body;
+    expect(page.selfReport).toBe("went");
+    expect(page.state).not.toBe("attended"); // only a provider can verify attendance
+    expect((await call("ravi", "GET", `/v1/events/${ev}`)).body.wrapUp.followUps).toEqual([]); // follow-ups stay with their owner
+  });
+
   it("disconnecting a source deletes the memberships it created", async () => {
     await onboard("asha");
     const res = await call("asha", "DELETE", "/v1/sources/mock_luma");

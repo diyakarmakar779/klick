@@ -6,6 +6,7 @@ import { initials, roleLine } from "../lib/people";
 import Button from "./Button";
 
 const monthYear = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { month: "short", year: "numeric" });
+const dayMonthYear = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 
 // The reason someone is worth meeting, in plain words. Never a score.
 export function ReasonLine({ text }: { text: string }) {
@@ -73,10 +74,11 @@ export function RecommendedRow({
 }
 
 // Catch up: one of your Klicks going, with your own private memory of how you met.
-export function ConnectedRow({ item }: { item: CatchUp }) {
+// `here` when the Klick was made at the event being shown.
+export function ConnectedRow({ item, here = false }: { item: CatchUp; here?: boolean }) {
   const { profile, memory, met } = item;
   const name = profile.displayName;
-  const metLine = `Klicked ${met.eventTitle ? `at ${met.eventTitle}, ` : ""}${monthYear(met.at)}`;
+  const metLine = here ? `Klicked here, ${dayMonthYear(met.at)}` : `Klicked ${met.eventTitle ? `at ${met.eventTitle}, ` : ""}${monthYear(met.at)}`;
   return (
     <article className="k-prow">
       <div className="k-prow__who">
