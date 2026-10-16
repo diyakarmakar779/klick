@@ -1,8 +1,9 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, CalendarDays, Check, ChevronRight, CircleCheck, Clock, ExternalLink, Eye, Image as ImageIcon, Info, MapPin, Sparkles } from "lucide-react";
 import Alert from "../../ui/Alert";
 import Button from "../../ui/Button";
+import SectionHead from "../../ui/SectionHead";
 import ShareSheet from "../../ui/ShareSheet";
 import { ConnectedRow, RecommendedRow, ViewOnlyRow } from "../../ui/PersonRow";
 import { Api, type Match } from "../../lib/api";
@@ -11,18 +12,6 @@ import { firstName } from "../../lib/people";
 import { PARTICIPATION, SOURCE_LABEL, ago, canBeMatched, isPast, whenLong, where } from "../../lib/eventFormat";
 
 const SHOWN_MATCHES = 2;
-
-function SectionHead({ title, count, action }: { title: string; count?: number; action?: ReactNode }) {
-  return (
-    <div className="k-shead">
-      <h3>
-        {title}
-        {count !== undefined && <span className="k-count">{count}</span>}
-      </h3>
-      {action}
-    </div>
-  );
-}
 
 // One of the member's own events: the event, getting ready, and who's going in three tiers.
 // Catch up is private to the member, Worth meeting is reciprocal, Also going is names only. Never a guest list.

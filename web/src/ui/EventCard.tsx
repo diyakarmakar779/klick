@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
-import { Check, CircleCheck, Clock, Image as ImageIcon, User } from "lucide-react";
-import type { MyEvent, PeopleSignal } from "../lib/api";
+import { BookmarkCheck, Check, CircleCheck, Clock, Image as ImageIcon, User } from "lucide-react";
+import type { DiscoverItem, KlickEvent, MyEvent, PeopleSignal } from "../lib/api";
 import { canBeMatched, dateLine, isPast } from "../lib/eventFormat";
 
 type BadgeKind = "going" | "pending" | "went";
@@ -41,27 +41,47 @@ function Avatars({ signal, tone, label }: { signal: PeopleSignal; tone: "brand" 
   );
 }
 
-// List card for one of the member's own events: poster, status, date, and who's there for you.
-export default function EventCard({ item }: { item: MyEvent }) {
-  const { event, people } = item;
-  const past = isPast(event);
-  const { badge, prep } = status(item);
-  const { label, Icon } = BADGE[badge];
-  // Worth meeting is about who to meet next, so a past card only shows the people you know.
-  const worth = past ? null : people.worthMeeting.count > 0 ? people.worthMeeting : null;
-  const catchUp = people.catchUp.count > 0 ? people.catchUp : null;
+// Shared card body: poster with an optional status, title and date, people signal, one nudge.
+function CardView({
+  event,
+  to,
+  past,
+  badge,
+  worth,
+  catchUp,
+  prep,
+  saved,
+}: {
+  event: KlickEvent;
+  to: string;
+  past: boolean;
+  badge: BadgeKind | null;
+  worth: PeopleSignal | null;
+  catchUp: PeopleSignal | null;
+  prep: string | null;
+  saved?: boolean;
+}) {
+  const b = badge ? BADGE[badge] : null;
   return (
-    <Link to={`/events/${event.id}`} className="k-ecard">
+    <Link to={to} className="k-ecard">
       <div className={`k-ecard__poster${past ? " k-ecard__poster--past" : ""}`}>
         {event.coverImageUrl ? (
           <img src={event.coverImageUrl} alt="" loading="lazy" />
         ) : (
           <ImageIcon className="k-ecard__ph" aria-hidden="true" />
         )}
-        <span className={`k-status k-status--${badge}`}>
-          <Icon className="pd-i" aria-hidden="true" />
-          {label}
-        </span>
+        {b && (
+          <span className={`k-status k-status--${badge}`}>
+            <b.Icon className="pd-i" aria-hidden="true" />
+            {b.label}
+          </span>
+        )}
+        {saved && (
+          <span className="k-status k-status--went k-ecard__saved">
+            <BookmarkCheck className="pd-i" aria-hidden="true" />
+            Saved
+          </span>
+        )}
       </div>
       <div className="k-ecard__head">
         <h4>{event.title}</h4>
@@ -81,5 +101,33 @@ export default function EventCard({ item }: { item: MyEvent }) {
         </span>
       )}
     </Link>
+  );
+}
+
+// List card for one of the member's own events.
+export default function EventCard({ item }: { item: MyEvent }) {
+  const { event, people } = item;
+  const past = isPast(event);
+  const { badge, prep } = status(item);
+  // Worth meeting is about who to meet next, so a past card only shows the people you know.
+  const worth = past ? null : people.worthMeeting.count > 0 ? people.worthMeeting : null;
+  const catchUp = people.catchUp.count > 0 ? people.catchUp : null;
+  return <CardView event={event} to={`/events/${event.id}`} past={past} badge={badge} worth={worth} catchUp={catchUp} prep={prep} />;
+}
+
+// Discover card: no status (it isn't yours yet). Worth meeting is a count only, shown when it's big enough.
+export function DiscoverCard({ item }: { item: DiscoverItem }) {
+  const worth = item.worthMeeting.count ? { count: item.worthMeeting.count, initials: [] } : null;
+  return (
+    <CardView
+      event={item.event}
+      to={`/discover/${item.event.id}`}
+      past={false}
+      badge={null}
+      worth={worth}
+      catchUp={item.catchUp.count > 0 ? item.catchUp : null}
+      prep={null}
+      saved={item.saved}
+    />
   );
 }

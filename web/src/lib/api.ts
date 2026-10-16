@@ -44,6 +44,10 @@ export const Api = {
     api<{ imported: number }>("/v1/sources/luma_mcp/callback", { method: "POST", body: { code, state } }),
   events: () => api<MyEvent[]>("/v1/events"),
   event: (eventId: string) => api<EventPage>(`/v1/events/${eventId}`),
+  discover: () => api<DiscoverItem[]>("/v1/discover"),
+  discoverEvent: (eventId: string) => api<DiscoverEvent>(`/v1/discover/${eventId}`),
+  planToAttend: (eventId: string) => api(`/v1/events/${eventId}/plan`, { method: "POST" }),
+  saveEvent: (eventId: string, on: boolean) => api(`/v1/events/${eventId}/save`, { method: on ? "PUT" : "DELETE" }),
   savePerson: (eventId: string, memberId: string, reason: string | null) =>
     api(`/v1/events/${eventId}/saves/${memberId}`, { method: "PUT", body: { reason } }),
   unsavePerson: (eventId: string, memberId: string) => api(`/v1/events/${eventId}/saves/${memberId}`, { method: "DELETE" }),
@@ -117,6 +121,22 @@ export interface MyEvent {
 export interface PeopleSignal {
   count: number;
   initials: string[];
+}
+
+// An upcoming event you aren't on, found through your Klicks. Worth meeting stays locked until you plan to attend.
+export interface DiscoverItem {
+  event: KlickEvent;
+  saved: boolean;
+  catchUp: PeopleSignal;
+  worthMeeting: Count;
+}
+
+export interface DiscoverEvent {
+  event: KlickEvent;
+  saved: boolean;
+  catchUp: CatchUp[];
+  worthMeeting: Count;
+  othersGoing: Count;
 }
 
 export interface Count {

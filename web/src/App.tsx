@@ -12,6 +12,7 @@ import Onboarding from "./screens/onboarding/Onboarding";
 import Events from "./screens/events/Events";
 import EventPage from "./screens/events/EventPage";
 import People from "./screens/events/People";
+import DiscoverEvent from "./screens/events/DiscoverEvent";
 import Klicks from "./screens/klicks/Klicks";
 import Person from "./screens/klicks/Person";
 import MyQr from "./screens/qr/MyQr";
@@ -35,6 +36,7 @@ function Signedin() {
           <Route path="events" element={<Events />} />
           <Route path="events/:eventId" element={<EventPage />} />
           <Route path="events/:eventId/people" element={<People />} />
+          <Route path="discover/:eventId" element={<DiscoverEvent />} />
           <Route path="klicks" element={<Klicks />} />
           <Route path="klicks/:connectionId" element={<Person />} />
           <Route path="qr" element={<MyQr />} />
