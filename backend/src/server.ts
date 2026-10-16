@@ -54,6 +54,7 @@ import {
 } from "./db/repos/memories.js";
 import { mockLumaEvents } from "./lib/mockLuma.js";
 import { unsavePerson } from "./db/repos/saves.js";
+import { discoverEvent, discoverEvents, planToAttend, setEventSaved } from "./services/discover.js";
 import { AiError } from "./ai/client.js";
 import { analyzeMemory, draftFollowUp, draftFollowUpById, eventPeopleDetail, eventPeopleSummary, saveSuggestion, suggestMatches } from "./services/ai.js";
 import { CALENDAR_SCOPE, fetchCalendarEvents } from "./lib/googleCalendar.js";
@@ -258,6 +259,18 @@ export function buildServer() {
         const { eventId } = req.params as { eventId: string };
         const { goal } = z.object({ goal: z.string().max(280).nullable() }).parse(req.body);
         return setEventGoal(req.memberId, eventId, goal);
+      });
+      // ---- Discover: events found through your own Klicks, never a catalogue
+      api.get("/discover", async (req) => discoverEvents(req.memberId));
+      api.get("/discover/:eventId", async (req) => discoverEvent(req.memberId, (req.params as { eventId: string }).eventId));
+      api.post("/events/:eventId/plan", async (req) => planToAttend(req.memberId, (req.params as { eventId: string }).eventId));
+      api.put("/events/:eventId/save", async (req) => {
+        await setEventSaved(req.memberId, (req.params as { eventId: string }).eventId, true);
+        return { saved: true };
+      });
+      api.delete("/events/:eventId/save", async (req) => {
+        await setEventSaved(req.memberId, (req.params as { eventId: string }).eventId, false);
+        return { saved: false };
       });
       // Save someone worth meeting (private; they're never told). Unsave is always allowed.
       api.put("/events/:eventId/saves/:memberId", async (req) => {

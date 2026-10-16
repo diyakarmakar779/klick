@@ -14,6 +14,7 @@ export const COLLECTIONS = {
   qrTokens: "qrTokens", // short-lived opaque tokens behind each member's QR code
   oauthStates: "oauthStates", // 10-minute PKCE state for provider sign-in; deleted when used
   saves: "saves", // private bookmarks: people a member wants to remember to meet at an event
+  savedEvents: "savedEvents", // private bookmarks of Discover events, `${ownerId}__${eventId}`
 } as const;
 
 const timestamp = z.date();

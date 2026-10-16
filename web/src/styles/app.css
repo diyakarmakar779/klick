@@ -290,3 +290,19 @@ a.k-ecard:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
 .k-wrap__row .k-grow{display:flex;flex-direction:column;gap:2px;min-width:0}
 .k-wrap__row b{font-size:15px;font-weight:600}
 .k-wrap__row small{font-size:13px;color:var(--muted-foreground)}
+.k-ecard__poster .k-ecard__saved{left:auto;right:8px}
+
+/* Yours / Discover switch and filter chips (Events system) */
+.k-seg{display:flex;gap:4px;padding:4px;background:var(--muted);border-radius:12px}
+.k-seg button{flex:1;height:44px;border:1px solid transparent;border-radius:8px;background:none;color:var(--muted-foreground);font:600 14px var(--font-sans);cursor:pointer;transition:background-color .15s,color .15s}
+.k-seg button:not([aria-selected="true"]):hover{background:#ebebeb;color:var(--foreground)}
+.k-seg button[aria-selected="true"]{background:var(--background);border-color:var(--border);color:var(--foreground)}
+.k-discover__intro{margin:-4px 0 0;font-size:13px}
+.k-chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.k-chip{flex:none;display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 14px;border:1px solid #939393;border-radius:9999px;background:var(--background);color:var(--foreground);font:600 14px var(--font-sans);cursor:pointer;transition:border-color .15s}
+.k-chip:hover{border-color:var(--brand-fill)}
+.k-chip[aria-checked="true"]{background:var(--brand-soft);border-color:var(--brand-border);color:var(--brand-text)}
+.k-chip .pd-i{width:16px;height:16px}
+.k-ehero__why{display:flex;align-items:center;gap:6px;font-size:13px;color:#5c5c5c}
+.k-ehero__why .pd-i{width:16px;height:16px}
+.k-ehero__cta{flex-wrap:nowrap}
