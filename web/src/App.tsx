@@ -13,6 +13,9 @@ import Events from "./screens/events/Events";
 import EventPage from "./screens/events/EventPage";
 import People from "./screens/events/People";
 import Klicks from "./screens/klicks/Klicks";
+import MyQr from "./screens/qr/MyQr";
+import Scan from "./screens/qr/Scan";
+import QrLanding from "./screens/qr/QrLanding";
 
 function Signedin() {
   const { me, error } = useMe();
@@ -32,7 +35,9 @@ function Signedin() {
           <Route path="events/:eventId" element={<EventPage />} />
           <Route path="events/:eventId/people" element={<People />} />
           <Route path="klicks" element={<Klicks />} />
-          <Route path="qr" element={<Placeholder title="My QR" body="Show your code so someone can request a Klick, or scan theirs." />} />
+          <Route path="qr" element={<MyQr />} />
+          <Route path="scan" element={<Scan />} />
+          <Route path="k/:token" element={<QrLanding />} />
           <Route path="settings" element={<Placeholder title="Settings" body="Sharing defaults, connected sources and accessibility options." />} />
           <Route path="profile" element={<Profile />} />
           <Route path="dev" element={<Dev />} />
