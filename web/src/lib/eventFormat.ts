@@ -55,6 +55,9 @@ export function whenLong(e: KlickEvent) {
   return e.endsAt ? `${day}, ${time(start)} to ${time(new Date(e.endsAt))}` : `${day}, ${time(start)}`;
 }
 
+// "22 October", in the event's own time zone.
+export const dayLong = (e: KlickEvent) => new Date(e.startsAt).toLocaleDateString("en-GB", { timeZone: zone(e), day: "numeric", month: "long" });
+
 // "2 hours ago", for when a source last synced.
 export function ago(iso: string) {
   const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
