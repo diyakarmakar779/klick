@@ -28,7 +28,7 @@ import {
   requestConnection,
   updateSharedFields,
 } from "./db/repos/connections.js";
-import { createQrToken, previewQr, resolveQrToken } from "./db/repos/qr.js";
+import { createQrToken, previewQr, resolveQrToken, sharedEvent } from "./db/repos/qr.js";
 import { ownsPath, signedUploadUrl } from "./lib/storage.js";
 import { authorizeUrl, exchangeCode } from "./lib/linkedin.js";
 import {
@@ -283,7 +283,7 @@ export function buildServer() {
         if (body.qrToken) {
           const t = await resolveQrToken(body.qrToken);
           to = t.memberId;
-          eventId = eventId ?? t.eventId;
+          eventId = eventId ?? (t.eventId ? (await sharedEvent(t.eventId, req.memberId))?.id ?? null : null);
         }
         return requestConnection(req.memberId, to, {
           eventId,
