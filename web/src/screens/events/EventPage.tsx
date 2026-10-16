@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, CalendarDays, CircleCheck, ExternalLink, Eye, Image as ImageIcon, Info, MapPin, Sparkles } from "lucide-react";
+import { ArrowLeft, CalendarDays, Check, ChevronRight, CircleCheck, Clock, ExternalLink, Eye, Image as ImageIcon, Info, MapPin, Sparkles } from "lucide-react";
 import Alert from "../../ui/Alert";
 import Button from "../../ui/Button";
 import ShareSheet from "../../ui/ShareSheet";
@@ -31,7 +31,7 @@ export default function EventPage() {
   const { data, setData, error, reload } = useLoad(() => Api.event(eventId), [eventId]);
   const [editingGoal, setEditingGoal] = useState(false);
   const [goal, setGoal] = useState("");
-  const [saving, setSaving] = useState<"goal" | "visibility" | null>(null);
+  const [saving, setSaving] = useState<"goal" | "visibility" | "attendance" | null>(null);
   const [actionError, setActionError] = useState("");
   const [matches, setMatches] = useState<Match[] | null>(null);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
@@ -90,6 +90,11 @@ export default function EventPage() {
   const source = SOURCE_LABEL[data.provenance.source] ?? data.provenance.source;
   const real = data.provenance.source === "google_calendar" || data.provenance.source === "luma_mcp";
 
+  const verified = state === "attended";
+  const went = verified || data.selfReport === "went";
+  const { toReview, followUps } = data.wrapUp;
+  const reviewLink = data.metHere.find((c) => c.memory && !c.memory.reviewed);
+
   const shownMatches = (matches ?? []).filter((m) => !hidden.has(m.memberId));
   const matchedIds = new Set((matches ?? []).map((m) => m.memberId));
   const alsoGoing = data.alsoGoing.filter((p) => !matchedIds.has(p.id));
@@ -101,6 +106,19 @@ export default function EventPage() {
       await Api.setVisibility(eventId, on ? "confirmed_attendees" : "hidden");
       setData((d) => d && { ...d, visibility: on ? "confirmed_attendees" : "hidden", effectiveVisibility: on ? "confirmed_attendees" : "hidden" });
       void reload(); // who's going changes with it
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  async function answerAttendance(selfReport: "went" | "didnt" | null) {
+    setSaving("attendance");
+    setActionError("");
+    try {
+      await Api.setAttendance(eventId, selfReport);
+      setData((d) => d && { ...d, selfReport });
     } catch (e) {
       setActionError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -124,9 +142,15 @@ export default function EventPage() {
 
   return (
     <>
-      <div className="k-ehero">
+      <div className={`k-ehero${past ? " k-ehero--past" : ""}`}>
         <div className="pd-page pd-page--narrow k-ehero__inner">
           <div className="k-ehero__bar">{back}</div>
+          {past && went && (
+            <span className="k-status k-status--went k-self-start">
+              <Check className="pd-i" aria-hidden="true" />
+              Went
+            </span>
+          )}
           <div className="k-ehero__poster">
             {event.coverImageUrl ? <img src={event.coverImageUrl} alt="" /> : <ImageIcon className="k-ecard__ph" aria-hidden="true" />}
           </div>
@@ -146,7 +170,7 @@ export default function EventPage() {
           <div>
             <small className="k-ehero__source">
               {real ? `From ${source}` : "Demo event"}
-              {data.syncedAt && `, synced ${ago(data.syncedAt)}`}
+              {past && verified ? ". Attendance confirmed by your event source." : data.syncedAt && `, synced ${ago(data.syncedAt)}`}
             </small>
             {event.url && (
               <a className="pd-btn pd-btn--link k-ehero__link" href={event.url} target="_blank" rel="noreferrer">
@@ -155,7 +179,7 @@ export default function EventPage() {
               </a>
             )}
           </div>
-          {participation && (
+          {participation && !past && (
             <span className="k-participation">
               <CircleCheck className="pd-i" aria-hidden="true" />
               {participation}
@@ -245,8 +269,82 @@ export default function EventPage() {
           </section>
         )}
 
+        {past && !verified && (
+          <section className="k-esection">
+            <div className="k-locked">
+              <b>
+                <Clock className="pd-i" aria-hidden="true" />
+                {data.selfReport === "went" ? "You said you went" : data.selfReport === "didnt" ? "You said you didn't go" : "Did you go?"}
+              </b>
+              <p>Only you see your answer. Klick never marks you as attended unless your event source confirms it.</p>
+              <div className="k-row">
+                {data.selfReport ? (
+                  <Button variant="outline" size="sm" loading={saving === "attendance"} onClick={() => answerAttendance(null)}>
+                    Change answer
+                  </Button>
+                ) : (
+                  <>
+                    <Button variant="primary" size="sm" loading={saving === "attendance"} onClick={() => answerAttendance("went")}>
+                      Yes, I went
+                    </Button>
+                    <Button variant="outline" size="sm" disabled={saving === "attendance"} onClick={() => answerAttendance("didnt")}>
+                      No
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {past && (toReview > 0 || followUps.length > 0) && (
+          <section className="k-esection">
+            <SectionHead title="Wrap up" />
+            <div className="k-wrap">
+              {toReview > 0 && (
+                <Link to={reviewLink ? `/klicks/${reviewLink.connectionId}` : "/klicks"} className="k-wrap__row">
+                  <Clock className="pd-i" aria-hidden="true" />
+                  <span className="k-grow">
+                    <b>
+                      Review {toReview} memor{toReview === 1 ? "y" : "ies"}
+                    </b>
+                    <small>Before {toReview === 1 ? "it joins" : "they join"} your private timeline.</small>
+                  </span>
+                  <ChevronRight className="pd-i" aria-hidden="true" />
+                </Link>
+              )}
+              {followUps.length > 0 && (
+                <Link to={`/klicks/${followUps[0].connectionId}`} className="k-wrap__row">
+                  <Clock className="pd-i" aria-hidden="true" />
+                  <span className="k-grow">
+                    <b>
+                      {followUps.length} follow-up{followUps.length === 1 ? "" : "s"} due
+                    </b>
+                    <small>
+                      {followUps[0].with ? `With ${firstName(followUps[0].with)}: ` : ""}
+                      {followUps[0].reason}
+                    </small>
+                  </span>
+                  <ChevronRight className="pd-i" aria-hidden="true" />
+                </Link>
+              )}
+            </div>
+          </section>
+        )}
+
+        {past && data.metHere.length > 0 && (
+          <section className="k-esection">
+            <div className="k-tier">
+              <SectionHead title="People you met" count={data.metHere.length} />
+              {data.metHere.map((c) => (
+                <ConnectedRow key={c.connectionId} item={c} here />
+              ))}
+            </div>
+          </section>
+        )}
+
         <section className="k-esection">
-          <SectionHead title="Who's going" />
+          {!past && <SectionHead title="Who's going" />}
 
           {!past && matchable && (
             <div className="k-tier">
@@ -292,7 +390,7 @@ export default function EventPage() {
             </div>
           )}
 
-          {data.catchUp.length > 0 && (
+          {!past && data.catchUp.length > 0 && (
             <div className="k-tier">
               <SectionHead title="Catch up" count={data.catchUp.length} />
               {data.catchUp.map((c) => (
@@ -316,8 +414,10 @@ export default function EventPage() {
           <p className="k-coverage">
             <Info className="pd-i" aria-hidden="true" />
             {data.notShown
-              ? `${data.notShown} more people on Klick are going but haven't chosen to be found, so they aren't shown.`
-              : `${data.onPlatformGoing.label} people on Klick are going. Klick never shows a guest list.`}
+              ? past
+                ? `${data.onPlatformGoing.label} people on Klick were going. Klick never shows a guest list.`
+                : `${data.notShown} more people on Klick are going but haven't chosen to be found, so they aren't shown.`
+              : `${data.onPlatformGoing.label} people on Klick ${past ? "were" : "are"} going. Klick never shows a guest list.`}
           </p>
         </section>
 

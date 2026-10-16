@@ -44,6 +44,8 @@ export const Api = {
     api<{ imported: number }>("/v1/sources/luma_mcp/callback", { method: "POST", body: { code, state } }),
   events: () => api<MyEvent[]>("/v1/events"),
   event: (eventId: string) => api<EventPage>(`/v1/events/${eventId}`),
+  setAttendance: (eventId: string, selfReport: "went" | "didnt" | null) =>
+    api(`/v1/events/${eventId}/attendance`, { method: "PUT", body: { selfReport } }),
   setGoal: (eventId: string, goal: string | null) => api(`/v1/events/${eventId}/goal`, { method: "PUT", body: { goal } }),
   linkedinStart: (redirectUri: string) =>
     api<{ url: string; state: string }>(`/v1/onboarding/linkedin/start?redirectUri=${encodeURIComponent(redirectUri)}`),
@@ -138,7 +140,10 @@ export interface EventPage {
   onPlatformGoing: Count;
   discoverable: Count;
   syncedAt: string | null;
+  selfReport: "went" | "didnt" | null;
   catchUp: CatchUp[];
+  metHere: CatchUp[];
+  wrapUp: { toReview: number; followUps: Array<{ id: string; connectionId: string; reason: string; dueAt: string; with: string }> };
   alsoGoing: Array<Pick<PublicProfile, "id" | "displayName" | "role" | "company" | "headline">>;
   notShown: number | null;
 }
