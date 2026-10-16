@@ -38,6 +38,14 @@ export function when(e: KlickEvent) {
   return e.endsAt ? `${day}, ${time(start)} to ${time(new Date(e.endsAt))}` : `${day}, ${time(start)}`;
 }
 
+// "Thu, 22 Oct · 6:30 pm", the list card's date line.
+export function dateLine(e: KlickEvent) {
+  const opts: Intl.DateTimeFormatOptions = { timeZone: zone(e) };
+  const d = new Date(e.startsAt);
+  const day = d.toLocaleDateString("en-IN", { ...opts, weekday: "short", day: "numeric", month: "short" });
+  return `${day} · ${d.toLocaleTimeString("en-IN", { ...opts, hour: "numeric", minute: "2-digit" })}`;
+}
+
 export function where(e: KlickEvent) {
   if (e.venue.online && !e.venue.name) return "Online";
   return [e.venue.name, e.venue.city].filter(Boolean).join(", ") || null;
