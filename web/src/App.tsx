@@ -9,6 +9,8 @@ import Dev from "./screens/Dev";
 import Placeholder from "./screens/Placeholder";
 import Callback from "./screens/Callback";
 import Onboarding from "./screens/onboarding/Onboarding";
+import Events from "./screens/events/Events";
+import EventPage from "./screens/events/EventPage";
 
 function Signedin() {
   const { me, error } = useMe();
@@ -24,7 +26,9 @@ function Signedin() {
       ) : (
         <Route element={<AppShell />}>
           <Route index element={<Home />} />
-          <Route path="events" element={<Placeholder title="Events" body="Your events from Google Calendar and Luma will appear here." />} />
+          <Route path="events" element={<Events />} />
+          <Route path="events/:eventId" element={<EventPage />} />
+          <Route path="events/:eventId/people" element={<Placeholder title="Who to meet" body="Suggested people for this event, with why each one is worth meeting." />} />
           <Route path="klicks" element={<Placeholder title="Klicks" body="People you Klick with, and requests waiting for you, will appear here." />} />
           <Route path="qr" element={<Placeholder title="My QR" body="Show your code so someone can request a Klick, or scan theirs." />} />
           <Route path="settings" element={<Placeholder title="Settings" body="Sharing defaults, connected sources and accessibility options." />} />
