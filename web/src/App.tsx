@@ -6,7 +6,6 @@ import SignIn from "./screens/SignIn";
 import Home from "./screens/Home";
 import Profile from "./screens/Profile";
 import Dev from "./screens/Dev";
-import Placeholder from "./screens/Placeholder";
 import Callback from "./screens/Callback";
 import Onboarding from "./screens/onboarding/Onboarding";
 import Events from "./screens/events/Events";
@@ -42,7 +41,7 @@ function Signedin() {
           <Route path="qr" element={<MyQr />} />
           <Route path="scan" element={<Scan />} />
           <Route path="k/:token" element={<QrLanding />} />
-          <Route path="settings" element={<Placeholder title="Settings" body="Sharing defaults, connected sources and accessibility options." />} />
+          <Route path="settings" element={<Navigate to="/profile" replace />} />
           <Route path="profile" element={<Profile />} />
           <Route path="dev" element={<Dev />} />
           <Route path="*" element={<Navigate to="/" replace />} />
