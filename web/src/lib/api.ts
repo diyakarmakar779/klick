@@ -30,8 +30,12 @@ export async function api<T>(path: string, init: { method?: string; body?: unkno
 
 // Examples of the main calls; see docs/ARCHITECTURE.md for the full list.
 export const Api = {
-  me: () => api<Record<string, unknown>>("/v1/me"),
-  saveMe: (body: Record<string, unknown>) => api("/v1/me", { method: "PUT", body }),
+  me: () => api<Me>("/v1/me"),
+  saveMe: (body: Partial<Omit<Me, "id" | "onboarding" | "linkedin" | "questionnaire">>) => api<Me>("/v1/me", { method: "PUT", body }),
+  skipIdentity: () => api<Me>("/v1/onboarding/identity/skip", { method: "POST" }),
+  finishIntegrations: () => api<Me>("/v1/onboarding/integrations/done", { method: "POST" }),
+  saveQuestionnaire: (body: Omit<Questionnaire, "updatedAt">) => api<Me>("/v1/onboarding/questionnaire", { method: "PUT", body }),
+  sources: () => api<Array<{ provider: string; syncState: string; lastSyncAt: string | null }>>("/v1/sources"),
   syncCalendar: (accessToken: string) => api<{ imported: number; removed: number }>("/v1/sources/google_calendar/sync", { method: "POST", body: { accessToken } }),
   // Luma: send the member to `url`; Luma returns to /connect/luma/callback?code=&state=, which calls lumaCallback.
   lumaStart: (redirectUri: string) =>
@@ -43,7 +47,7 @@ export const Api = {
     api<{ url: string; state: string }>(`/v1/onboarding/linkedin/start?redirectUri=${encodeURIComponent(redirectUri)}`),
   linkedinCallback: (code: string, state: string) =>
     api<{ candidate: LinkedInCandidate }>("/v1/onboarding/linkedin/callback", { method: "POST", body: { code, state } }),
-  linkedinConfirm: (isMe: boolean) => api<Record<string, unknown>>("/v1/onboarding/linkedin/confirm", { method: "POST", body: { isMe } }),
+  linkedinConfirm: (isMe: boolean) => api<Me>("/v1/onboarding/linkedin/confirm", { method: "POST", body: { isMe } }),
   joinDemoEvents: () => api<{ imported: number }>("/v1/sources/mock_luma/connect", { method: "POST" }),
   setVisibility: (eventId: string, visibility: "hidden" | "confirmed_attendees" | "connections" | null) =>
     api(`/v1/events/${eventId}/visibility`, { method: "PUT", body: { visibility } }),
@@ -73,4 +77,35 @@ export interface LinkedInCandidate {
   pictureUrl: string | null;
   email: string | null;
   emailMatchesAccount: boolean;
+}
+
+export interface Questionnaire {
+  lookingFor: string[];
+  lookingForDetail: string;
+  offering: string[];
+  offeringDetail: string;
+  topics: string[];
+  meetingStyle: "one_on_one" | "small_group" | "either";
+}
+
+export interface Accessibility {
+  simpleLanguage: boolean;
+  readAloud: boolean;
+  prefersTextFirst: boolean;
+  quietSpaces: boolean;
+}
+
+export interface Me {
+  id: string;
+  displayName: string;
+  headline: string;
+  role: string;
+  company: string;
+  interests: string[];
+  goals: string[];
+  accessibility: Accessibility;
+  defaultVisibility: "hidden" | "confirmed_attendees" | "connections";
+  linkedin: (LinkedInCandidate & { confirmedAt: string }) | null;
+  questionnaire: Questionnaire | null;
+  onboarding: { step: "identity" | "integrations" | "questionnaire" | "done"; completedAt: string | null };
 }
