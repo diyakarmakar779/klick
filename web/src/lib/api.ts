@@ -105,6 +105,13 @@ export interface MyEvent {
   visibility: Visibility | null;
   effectiveVisibility: Visibility;
   goal: string | null;
+  people: { worthMeeting: PeopleSignal; catchUp: PeopleSignal };
+}
+
+// Counts and up to three initials; the list never carries names.
+export interface PeopleSignal {
+  count: number;
+  initials: string[];
 }
 
 export interface Count {
