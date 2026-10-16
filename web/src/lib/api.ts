@@ -54,6 +54,11 @@ export const Api = {
   setVisibility: (eventId: string, visibility: Visibility | null) =>
     api(`/v1/events/${eventId}/visibility`, { method: "PUT", body: { visibility } }),
   matches: (eventId: string) => api<{ ai: boolean; matches: Match[] }>(`/v1/events/${eventId}/matches`),
+  requestKlick: (body: { to: string; eventId: string | null; context?: string; shareFields: ContactField[] }) =>
+    api<Connection>("/v1/connections", { method: "POST", body }),
+  connections: (status?: Connection["status"]) => api<KlickItem[]>(`/v1/connections${status ? `?status=${status}` : ""}`),
+  actOnConnection: (id: string, action: "accept" | "decline" | "revoke" | "block", shareFields: ContactField[] = []) =>
+    api<Connection>(`/v1/connections/${id}/${action}`, { method: "POST", body: { shareFields } }),
   createQr: (eventId: string | null) => api<{ token: string; expiresAt: string }>("/v1/qr", { method: "POST", body: { eventId } }),
   previewQr: (token: string) => api(`/v1/qr/${token}`),
 };
@@ -114,11 +119,32 @@ export interface EventPage {
 
 export interface Match {
   memberId: string;
-  score: number;
   reason: string;
   starter: string;
   source: "gemini" | "overlap";
-  profile?: { displayName: string; headline: string };
+  profile?: PublicProfile;
+}
+
+export const CONTACT_FIELDS = ["email", "phone", "linkedin", "website", "x"] as const;
+export type ContactField = (typeof CONTACT_FIELDS)[number];
+
+export interface Connection {
+  id: string;
+  memberIds: string[];
+  requestedBy: string;
+  eventId: string | null;
+  context: string;
+  requestNote: { kind: "text" | "voice" | "photo"; text: string | null; storagePath: string | null } | null;
+  status: "pending" | "accepted" | "declined" | "revoked" | "blocked";
+  createdAt: string;
+}
+
+export interface KlickItem {
+  connection: Connection;
+  incoming: boolean;
+  other: PublicProfile | null;
+  event: { id: string; title: string; startsAt: string } | null;
+  sharedContact: Partial<Record<ContactField, string>>;
 }
 
 export interface LinkedInCandidate {
@@ -154,6 +180,7 @@ export interface Me {
   goals: string[];
   accessibility: Accessibility;
   defaultVisibility: Visibility;
+  contact: Partial<Record<ContactField, string>>;
   linkedin: (LinkedInCandidate & { confirmedAt: string }) | null;
   questionnaire: Questionnaire | null;
   onboarding: { step: "identity" | "integrations" | "questionnaire" | "done"; completedAt: string | null };
