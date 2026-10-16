@@ -30,9 +30,9 @@ export default function QrLanding() {
             tone={error.status === 400 ? "info" : "warning"}
             title={error.status === 400 ? "That's your own code" : "This code has expired"}
             action={
-              <Link to="/qr" className="pd-btn pd-btn--outline pd-btn--sm">
+              <Link to={error.status === 400 ? "/profile?qr=1" : "/scan"} className="pd-btn pd-btn--outline pd-btn--sm">
                 <ScanLine className="pd-i" aria-hidden="true" />
-                My QR
+                {error.status === 400 ? "My QR" : "Scan again"}
               </Link>
             }
           >

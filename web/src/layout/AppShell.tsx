@@ -23,9 +23,9 @@ function Sidebar({ rail }: { rail?: boolean }) {
         </NavLink>
       ))}
       <div className="pd-sidebar__qr">
-        <NavLink to="/qr" className="pd-btn pd-btn--brand" aria-label={rail ? "My QR" : undefined}>
+        <NavLink to="/scan" className="pd-btn pd-btn--brand" aria-label={rail ? "Scan a code" : undefined}>
           <QrCode className="pd-i" aria-hidden="true" />
-          <span className="pd-sidebar__label">My QR</span>
+          <span className="pd-sidebar__label">Scan</span>
         </NavLink>
       </div>
       <div className="pd-sidebar__foot">
@@ -62,7 +62,7 @@ export default function AppShell() {
         <nav className="pd-nav pd-nav--app" aria-label="App navigation">
           {link(home)}
           {link(events)}
-          <NavLink to="/qr" aria-label="My QR">
+          <NavLink to="/scan" aria-label="Scan a code">
             <span className="pd-nav__qr">
               <QrCode className="pd-i" aria-hidden="true" />
             </span>

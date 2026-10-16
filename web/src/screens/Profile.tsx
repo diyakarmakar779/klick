@@ -1,5 +1,5 @@
-import { useEffect, useState, type ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import {
   BadgeCheck,
@@ -8,12 +8,14 @@ import {
   CalendarDays,
   ChevronDown,
   ChevronRight,
+  Boxes,
   Link2,
   Lock,
   LogOut,
   Pencil,
+  NotebookPen,
   QrCode,
-  Shapes,
+  RefreshCw,
   Target,
   Users,
   Wrench,
@@ -22,7 +24,8 @@ import { auth } from "../lib/firebase";
 import Header from "../layout/Header";
 import Button from "../ui/Button";
 import ChipPicker from "../ui/ChipPicker";
-import KlickCity from "../ui/KlickCity";
+import Alert from "../ui/Alert";
+import BlockQr from "../ui/BlockQr";
 import SectionHead from "../ui/SectionHead";
 import Sheet from "../ui/Sheet";
 import SettingSwitch from "../ui/Switch";
@@ -33,9 +36,7 @@ import { useLoad } from "../lib/useLoad";
 import { ago, isPast } from "../lib/eventFormat";
 import { initials } from "../lib/people";
 import { connectCalendar, startRedirect } from "../lib/sources";
-
-// Each event you're part of adds three pieces to your Klick city.
-const PIECES_PER_EVENT = 3;
+import { useMyQr } from "../lib/myQr";
 
 const errorText = (e: unknown) => (e instanceof ApiError ? `${e.message}. Try again.` : e instanceof Error ? e.message : String(e));
 
@@ -247,11 +248,26 @@ function AccountsSheet({ me, sources, onSynced, onClose }: { me: Me; sources: So
 export default function Profile() {
   const { me } = useMe();
   const u = auth.currentUser;
-  const events = useLoad(() => Api.events());
+  const qr = useMyQr();
+  const { events } = qr;
+  const memories = useLoad(() => Api.memories());
   const klicks = useLoad(() => Api.connections("accepted"));
   const [sources, setSources] = useState<Source[]>([]);
   const [more, setMore] = useState(false);
   const [sheet, setSheet] = useState<"edit" | "privacy" | "accounts" | null>(null);
+  // Your blocks are your QR: "Show my QR" turns them to the scannable top view.
+  // /profile?qr=1 (from the scanner or old My QR links) opens straight on the code.
+  const [params] = useSearchParams();
+  const toggleQr = useRef<(() => void) | null>(null);
+  const [showingQr, setShowingQr] = useState(false);
+  const onView = useCallback((top: boolean) => setShowingQr(top), []);
+  const [copied, setCopied] = useState(false);
+  async function copyLink() {
+    if (!qr.code) return;
+    await navigator.clipboard?.writeText(qr.code.url).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   const loadSources = () =>
     Api.sources()
@@ -276,14 +292,7 @@ export default function Profile() {
 
   return (
     <>
-      <Header
-        title="Profile"
-        action={
-          <Link to="/qr" className="pd-btn pd-btn--outline pd-btn--icon" aria-label="Show my QR">
-            <QrCode className="pd-i" aria-hidden="true" />
-          </Link>
-        }
-      />
+      <Header title="Profile" />
       <div className="pd-page pd-page--narrow k-prof">
         <div className="k-prof__hero">
           <div className="k-prof__avatar">
@@ -301,19 +310,58 @@ export default function Profile() {
             <Pencil className="pd-i" aria-hidden="true" />
             Edit profile
           </Button>
-          <Link to="/qr" className="pd-btn pd-btn--outline">
-            <QrCode className="pd-i" aria-hidden="true" />
-            Show my QR
-          </Link>
+          <Button variant="outline" disabled={!qr.code} aria-pressed={showingQr} onClick={() => toggleQr.current?.()}>
+            {showingQr ? <Boxes className="pd-i" aria-hidden="true" /> : <QrCode className="pd-i" aria-hidden="true" />}
+            {showingQr ? "Back to profile" : "Show my QR"}
+          </Button>
         </div>
 
-        <KlickCity seed={me.id} pieces={(eventCount ?? 0) * PIECES_PER_EVENT} />
+        {qr.error && (
+          <Alert tone="destructive" title="Klick couldn't make your code" action={<Button variant="outline" size="sm" onClick={qr.make}>Retry</Button>}>
+            Check your connection and try again.
+          </Alert>
+        )}
+        <div className="k-prof__qr">
+          {qr.code ? (
+            <BlockQr url={qr.code.url} svg={qr.code.svg} control={toggleQr} onView={onView} hideButton startTop={params.get("qr") === "1"} />
+          ) : (
+            <div className="k-blockqr__stage k-prof__qr-loading" aria-hidden="true" />
+          )}
+          {showingQr && qr.code && (
+            <div className="k-prof__qrinfo">
+              <p className="k-muted">They see your name, role and company, nothing else until you both accept.</p>
+              {qr.options.length > 0 && (
+                <label className="k-prof__met">
+                  <span>Where you met</span>
+                  <select className="pd-input" value={qr.eventId ?? ""} onChange={(e) => qr.setEventId(e.target.value || null)}>
+                    {qr.options.map((m) => (
+                      <option key={m.event.id} value={m.event.id}>
+                        {m.event.title}
+                      </option>
+                    ))}
+                    <option value="">Not at an event</option>
+                  </select>
+                </label>
+              )}
+              <p className="k-muted k-qr__timer" aria-live="polite">
+                Refreshes in {Math.floor(qr.left / 60)}:{String(qr.left % 60).padStart(2, "0")}
+                <button type="button" className="pd-btn pd-btn--ghost pd-btn--icon" aria-label="New code now" onClick={qr.make}>
+                  <RefreshCw className="pd-i" aria-hidden="true" />
+                </button>
+              </p>
+              <Button variant="ghost" size="sm" onClick={copyLink}>
+                <Link2 className="pd-i" aria-hidden="true" />
+                {copied ? "Link copied" : "Can't scan? Copy your link"}
+              </Button>
+            </div>
+          )}
+        </div>
 
         <div className="k-prof__cards">
           <div className="k-stats">
             <Stat icon={<CalendarDays className="pd-i" />} value={eventCount} label="Events" />
             <Stat icon={<Users className="pd-i" />} value={klicks.data?.length ?? null} label="Klicks" />
-            <Stat icon={<Shapes className="pd-i" />} value={eventCount === null ? null : eventCount * PIECES_PER_EVENT} label="Pieces" />
+            <Stat icon={<NotebookPen className="pd-i" />} value={memories.data?.length ?? null} label="Memories" />
           </div>
 
           <section className="k-pcard">

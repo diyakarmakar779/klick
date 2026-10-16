@@ -14,7 +14,6 @@ import People from "./screens/events/People";
 import DiscoverEvent from "./screens/events/DiscoverEvent";
 import Klicks from "./screens/klicks/Klicks";
 import Person from "./screens/klicks/Person";
-import MyQr from "./screens/qr/MyQr";
 import Scan from "./screens/qr/Scan";
 import QrLanding from "./screens/qr/QrLanding";
 
@@ -38,7 +37,7 @@ function Signedin() {
           <Route path="discover/:eventId" element={<DiscoverEvent />} />
           <Route path="klicks" element={<Klicks />} />
           <Route path="klicks/:connectionId" element={<Person />} />
-          <Route path="qr" element={<MyQr />} />
+          <Route path="qr" element={<Navigate to="/profile?qr=1" replace />} />
           <Route path="scan" element={<Scan />} />
           <Route path="k/:token" element={<QrLanding />} />
           <Route path="settings" element={<Navigate to="/profile" replace />} />
