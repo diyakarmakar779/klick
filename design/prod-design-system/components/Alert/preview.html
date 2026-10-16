@@ -1,0 +1,17 @@
+<!-- @dsCard group="Status" height=330 subtitle="Info, privacy, warning, error, success" -->
+<!doctype html>
+<html lang="en">
+<head><link rel="stylesheet" href="../../tokens.css"><link rel="stylesheet" href="../bundle.css"><script>(function(){var t=new URLSearchParams(location.search).get("theme");document.documentElement.setAttribute("data-theme",t||"blue-light")})();</script><meta charset="utf-8"><title>Alert</title></head>
+<body>
+<div class="pd-root">
+<div class="pd-stack">
+<div class="pd-alert pd-alert--info"><svg class="pd-i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg><div><b>Google Calendar synced 2 hours ago</b><p>New events show up here automatically.</p></div></div>
+<div class="pd-alert pd-alert--privacy"><svg class="pd-i" viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><div><b>Notes and voice notes stay private to you</b><p>Photos are shared only if you choose to share them.</p></div></div>
+<div class="pd-alert pd-alert--warning"><svg class="pd-i" viewBox="0 0 24 24" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3M12 9v4M12 17h.01"/></svg><div><b>Calendar access expires in 3 days</b><p>Reconnect to keep upcoming events in sync.</p></div><button class="pd-btn pd-btn--outline pd-btn--sm">Reconnect</button></div>
+<div class="pd-alert pd-alert--destructive"><svg class="pd-i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg><div><b>Voice note didn't upload</b><p>Check your connection, then retry. Your recording is saved on this device.</p></div><button class="pd-btn pd-btn--outline pd-btn--sm">Retry</button></div>
+<div class="pd-alert pd-alert--success"><svg class="pd-i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg><div><b>Klick request sent to Meera</b><p>You'll see her shared fields once she accepts.</p></div></div>
+</div>
+</div>
+<script>document.querySelectorAll('.pd-switch').forEach(function(s){s.addEventListener('click',function(){s.setAttribute('aria-checked',String(s.getAttribute('aria-checked')!=='true'))})});document.querySelectorAll('.pd-seg').forEach(function(t){t.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;t.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-selected',String(x===b))})})});</script>
+</body>
+</html>

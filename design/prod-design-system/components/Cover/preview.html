@@ -1,0 +1,65 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html lang="en">
+<head><link rel="stylesheet" href="../../tokens.css"><link rel="stylesheet" href="../bundle.css"><script>(function(){var t=new URLSearchParams(location.search).get("theme");document.documentElement.setAttribute("data-theme",t||"blue-light")})();</script>
+<meta charset="utf-8">
+<title>Prod :D</title>
+<style>
+  html, body { margin:0; height:100%; }
+  body { background:var(--background); color:var(--foreground); font-family:var(--font-sans); overflow:hidden; }
+  .cover { position:relative; height:288px; overflow:hidden; }
+  .art { position:absolute; top:0; left:480px; width:480px; height:288px; overflow:hidden; }
+  .art svg { display:block; width:480px; height:288px; }
+  .yellow { fill:var(--yellow-500); } .yellow-edge { fill:var(--yellow-700); }
+  .red { fill:var(--red-500); } .red-edge { fill:var(--red-700); }
+  .blue { fill:var(--blue-500); } .blue-edge { fill:var(--blue-700); }
+  .green { fill:var(--green-500); } .green-edge { fill:var(--green-700); }
+  .ink { fill:var(--foreground); } .ink-edge { fill:var(--muted-foreground); }
+  .brk { rx:var(--radius-lg); }
+  .stud { rx:var(--radius-sm); }
+  .words { position:absolute; left:var(--space-10); bottom:var(--space-8); max-width:440px; }
+  .name { margin:0; font-size:104px; line-height:.92; font-weight:800; letter-spacing:-.035em; color:var(--foreground); white-space:nowrap; }
+  .tag { margin:var(--space-3) 0 0 4px; font-size:14px; line-height:20px; color:var(--muted-foreground); }
+</style>
+</head>
+<body>
+<div class="cover">
+<div class="art" aria-hidden="true">
+<svg viewBox="0 0 480 288" width="480" height="288">
+<!--
+  blocks      yellow-500 / red-500 / blue-500 / green-500 bricks, 2-4 studs wide at a 48px (space-12) pitch, 64px bodies, edges inset by radius-sm; one foreground (ink) 1-stud brick on top
+  arrangement a small staggered toy build bleeding off the bottom: two bricks on the floor, two straddling them, the ink brick crowning it
+  pattern     the stud row (literal motif): studs on every brick top, because the brand is "childhood building blocks, differentiated by colour and studs"
+  scales      pitch space-12 (48), brick corners radius-lg (12), studs radius-sm (6), edges in each hue's 700 (the brand-edge step)
+-->
+<rect class="yellow stud" x="66" y="212" width="28" height="18"/>
+<rect class="yellow stud" x="114" y="212" width="28" height="18"/>
+<rect class="yellow stud" x="162" y="212" width="28" height="18"/>
+<rect class="yellow stud" x="210" y="212" width="28" height="18"/>
+<rect class="yellow brk" x="56" y="224" width="192" height="76"/>
+<rect class="red stud" x="274" y="212" width="28" height="18"/>
+<rect class="red stud" x="322" y="212" width="28" height="18"/>
+<rect class="red stud" x="370" y="212" width="28" height="18"/>
+<rect class="red stud" x="418" y="212" width="28" height="18"/>
+<rect class="red brk" x="264" y="224" width="192" height="76"/>
+<rect class="blue stud" x="114" y="148" width="28" height="18"/>
+<rect class="blue stud" x="162" y="148" width="28" height="18"/>
+<rect class="blue brk" x="104" y="160" width="96" height="64"/>
+<rect class="blue-edge" x="110" y="216" width="84" height="8"/>
+<rect class="green stud" x="210" y="148" width="28" height="18"/>
+<rect class="green stud" x="258" y="148" width="28" height="18"/>
+<rect class="green stud" x="306" y="148" width="28" height="18"/>
+<rect class="green brk" x="200" y="160" width="144" height="64"/>
+<rect class="green-edge" x="206" y="216" width="132" height="8"/>
+<rect class="ink stud" x="258" y="84" width="28" height="18"/>
+<rect class="ink brk" x="224" y="96" width="96" height="64"/>
+<rect class="ink-edge" x="230" y="152" width="84" height="8"/>
+</svg>
+</div>
+<div class="words">
+<p class="name">Prod :D</p>
+<p class="tag">One set of bricks for every product we build.</p>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,34 @@
+<!-- @dsCard group="Layout" height=510 width=1100 subtitle="Phone, tablet and desktop layouts" -->
+<!doctype html>
+<html lang="en">
+<head><link rel="stylesheet" href="../../tokens.css"><link rel="stylesheet" href="../bundle.css"><script>(function(){var t=new URLSearchParams(location.search).get("theme");document.documentElement.setAttribute("data-theme",t||"blue-light")})();</script><meta charset="utf-8"><title>AppShell</title><style>.cap{font-size:12px;font-weight:600;color:var(--muted-foreground);margin-bottom:8px}
+.f{border:1px solid var(--border);background:var(--background);overflow:hidden;display:flex;position:relative}
+.phone{width:240px;height:440px;border-radius:26px;flex-direction:column}
+.tab{width:330px;height:440px;border-radius:18px}
+.desk{flex:1;height:440px;border-radius:14px}
+.top{height:44px;display:flex;align-items:center;padding:0 12px;gap:8px;font-size:12px;font-weight:800;border-bottom:1px solid var(--border);flex:none}
+.body{flex:1;padding:12px;display:grid;gap:8px;align-content:start;overflow:hidden}
+.c{box-sizing:border-box;height:58px;border-radius:10px;background:var(--card);border:1px solid var(--border);display:flex;gap:8px;padding:9px}
+.c i{width:22px;height:22px;border-radius:50%;background:var(--brand-soft);flex:none;box-shadow:inset 0 0 0 1px var(--brand-border)}
+.c b{display:block;height:8px;width:60%;border-radius:4px;background:var(--secondary)}
+.c b+b{width:85%;margin-top:6px;background:var(--muted)}
+.hero{height:54px;border-radius:10px;background:var(--brand-soft);border:1px solid var(--brand-border)}
+.nav{height:52px;flex:none;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(5,1fr);align-items:center;justify-items:center;position:relative}
+.nav s{width:16px;height:16px;border-radius:5px;background:var(--muted-foreground);opacity:.5}
+.nav .q{width:34px;height:34px;border-radius:11px;background:var(--brand-fill);margin-top:-18px;opacity:1}
+.rail{width:44px;flex:none;border-right:1px solid var(--border);background:var(--sidebar);display:flex;flex-direction:column;align-items:center;gap:10px;padding:12px 0}
+.rail s,.sb s{width:16px;height:16px;border-radius:5px;background:var(--muted-foreground);opacity:.5}
+.rail .q{background:var(--brand-fill);opacity:1;width:22px;height:22px;border-radius:7px}
+.sb{width:120px;flex:none;border-right:1px solid var(--border);background:var(--sidebar);padding:12px 10px;display:grid;gap:9px;align-content:start}
+.sb div{display:flex;gap:7px;align-items:center;font-size:10px;font-weight:600;color:var(--muted-foreground)}
+.sb .on{color:var(--foreground);background:var(--sidebar-accent);border-radius:6px;padding:3px 4px;margin:0 -4px}
+.sb .q{background:var(--brand-fill);height:24px;border-radius:7px}
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.lab{position:absolute;bottom:8px;right:10px;font:600 10px var(--font-sans);color:var(--muted-foreground);background:var(--background);padding:1px 5px;border-radius:4px}</style></head>
+<body>
+<div class="pd-root">
+<div style="display:flex;gap:20px"><div><div class="cap">Phone, below 768</div><div class="f phone"><div class="top"><span class="pd-block pd-block--4" style="--u:9px" aria-hidden="true"><span class="pd-stud"></span><span class="pd-stud"></span><span class="pd-stud"></span><span class="pd-stud"></span></span>Home</div><div class="body"><div class="hero"></div><div class="c"><i></i><div style="flex:1"><b></b><b></b></div></div><div class="c"><i></i><div style="flex:1"><b></b><b></b></div></div><div class="c"><i></i><div style="flex:1"><b></b><b></b></div></div><div class="c"><i></i><div style="flex:1"><b></b><b></b></div></div></div><div class="nav"><s></s><s></s><s class="q"></s><s></s><s></s></div></div></div><div><div class="cap">Tablet, 768–1023</div><div class="f tab"><div class="rail"><span class="pd-block pd-block--4" style="--u:9px" aria-hidden="true"><span class="pd-stud"></span><span class="pd-stud"></span><span class="pd-stud"></span><span class="pd-stud"></span></span><s></s><s></s><s></s><s></s><s class="q"></s></div><div class="main"><div class="top">Home</div><div class="body"><div class="hero"></div><div class="g2"><div class="c"><i></i><div style="flex:1"><b></b><b></b></div></div><div class="c"><i></i><div style="flex:1"><b></b><b></b></div></div><div class="c"><i></i><div style="flex:1"><b></b><b></b></div></div><div class="c"><i></i><div style="flex:1"><b></b><b></b></div></div><div class="c"><i></i><div style="flex:1"><b></b><b></b></div></div><div class="c"><i></i><div style="flex:1"><b></b><b></b></div></div></div></div></div><span class="lab">rail 72 / 2 columns</span></div></div><div style="flex:1"><div class="cap">Desktop, 1024 and up</div><div class="f desk"><div class="sb"><div><span class="pd-block pd-block--4" style="--u:9px" aria-hidden="true"><span class="pd-stud"></span><span class="pd-stud"></span><span class="pd-stud"></span><span class="pd-stud"></span></span><span style="color:var(--foreground);font-weight:800">Klick</span></div><div class="on"><s></s>Home</div><div><s></s>Events</div><div><s></s>Klicks</div><div><s></s>Chat</div><div><s></s>Profile</div><div class="q"></div></div><div class="main"><div class="top" style="padding-left:20px">Home</div><div class="body" style="padding:16px 20px"><div class="hero"></div><div class="g3"><div class="c"><i></i><div style="flex:1"><b></b><b></b></div></div><div class="c"><i></i><div style="flex:1"><b></b><b></b></div></div><div class="c"><i></i><div style="flex:1"><b></b><b></b></div></div><div class="c"><i></i><div style="flex:1"><b></b><b></b></div></div><div class="c"><i></i><div style="flex:1"><b></b><b></b></div></div><div class="c"><i></i><div style="flex:1"><b></b><b></b></div></div></div></div></div><span class="lab">sidebar 264 / 3 columns, max 1200</span></div></div></div>
+</div>
+</body>
+</html>
