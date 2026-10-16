@@ -23,6 +23,7 @@ import {
 import {
   actOnConnection,
   connectionView,
+  listConnectionCards,
   listConnections,
   requestConnection,
   updateSharedFields,
@@ -298,7 +299,7 @@ export function buildServer() {
       });
       api.get("/connections", async (req) => {
         const { status } = req.query as { status?: string };
-        return listConnections(req.memberId, status ? z.enum(["pending", "accepted", "declined", "revoked", "blocked"]).parse(status) : undefined);
+        return listConnectionCards(req.memberId, status ? z.enum(["pending", "accepted", "declined", "revoked", "blocked"]).parse(status) : undefined);
       });
       api.post("/connections/:id/:action", async (req) => {
         const { id, action } = req.params as { id: string; action: string };

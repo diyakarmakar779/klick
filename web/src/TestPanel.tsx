@@ -91,7 +91,7 @@ export default function TestPanel({ onStatus }: { onStatus: (s: string) => void 
               <ol>
                 {matches.list.map((m) => (
                   <li key={m.memberId}>
-                    <strong>{m.profile?.displayName ?? m.memberId}</strong> ({m.score}) {m.reason}
+                    <strong>{m.profile?.displayName ?? m.memberId}</strong> {m.reason}
                     <br />
                     <em>“{m.starter}”</em>
                   </li>
