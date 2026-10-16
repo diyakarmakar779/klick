@@ -52,3 +52,27 @@ a{color:inherit}
 
 a.pd-btn{text-decoration:none}
 .k-flow .pd-block{align-self:flex-start}
+
+/* Selectable chips (questionnaire). Selection is brand-tinted. */
+.k-chip{display:inline-flex;align-items:center;height:36px;padding:0 14px;border-radius:var(--radius-full);border:1px solid var(--border);background:var(--background);color:var(--foreground);font:500 14px/1 var(--font-sans);cursor:pointer}
+.k-chip[aria-pressed="true"]{background:var(--brand-soft);border-color:var(--brand-border);color:var(--brand-text);font-weight:600}
+.k-chip:focus-visible{outline:3px solid var(--ring);outline-offset:2px}
+@media (pointer:coarse){.k-chip{height:var(--touch-target)}}
+.k-chip-add{display:flex;gap:var(--space-2);margin-top:var(--space-3)}
+.k-chip-add .pd-input{flex:1}
+.k-setting{cursor:pointer;padding:var(--space-3) 0;border-bottom:1px solid var(--border)}
+.k-setting:last-child{border-bottom:0}
+
+/* Onboarding */
+.k-steps{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);margin-bottom:var(--space-6)}
+.k-steps .pd-progress{flex:1;margin:0}
+.k-q{display:grid;gap:var(--space-2);margin-top:var(--space-8)}
+.k-q > h2{font-size:16px;font-weight:600}
+.k-source{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-4);border:1px solid var(--border);border-radius:var(--radius-xl)}
+.k-source + .k-source{margin-top:var(--space-3)}
+.k-source__icon{width:40px;height:40px;border-radius:var(--radius-lg);background:var(--muted);display:grid;place-items:center;flex:none}
+.k-source__body{flex:1;min-width:0}
+.k-source__body b{display:block;font-size:15px}
+.k-source__body small{display:block;font-size:13px;color:var(--muted-foreground)}
+.k-identity{display:grid;justify-items:center;text-align:center;gap:var(--space-3);padding:var(--space-6);border:1px solid var(--border);border-radius:var(--radius-xl);margin-top:var(--space-6)}
+.k-identity img{width:72px;height:72px;border-radius:50%;object-fit:cover}
