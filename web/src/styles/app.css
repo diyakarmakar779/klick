@@ -167,3 +167,15 @@ a.k-event-card:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
 @keyframes k-pulse{to{opacity:.3}}
 .k-home-fu{display:flex;gap:var(--space-3);align-items:center;color:inherit;text-decoration:none}
 .k-home-fu .pd-intent__due{margin-left:0}
+
+/* Block QR (from the klick-qr kit) */
+.k-blockqr{display:grid;gap:var(--space-3);width:100%;justify-items:center}
+.k-blockqr__stage{position:relative;width:100%;aspect-ratio:9/10;max-height:min(70vh,520px);border-radius:var(--radius-xl);overflow:hidden;cursor:grab;touch-action:pan-y;background:radial-gradient(circle at 50% 48%,#ffffff 0 40%,var(--muted) 100%);isolation:isolate}
+.k-blockqr__stage[data-dragging="true"]{cursor:grabbing}
+.k-blockqr__stage[data-mode="scan"]{background:#ffffff;cursor:pointer}
+.k-blockqr__stage:focus-visible{outline:3px solid var(--ring);outline-offset:3px}
+.k-blockqr__three{position:absolute;inset:0;width:100%;height:100%;z-index:1}
+.k-blockqr__verify{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.k-blockqr__loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted-foreground);font-size:13px;z-index:2}
+.k-blockqr__caption{position:absolute;left:0;right:0;bottom:var(--space-2);margin:0;text-align:center;font-size:12.5px;font-weight:600;color:var(--muted-foreground);z-index:2;pointer-events:none}
+.k-blockqr .pd-btn{width:100%;max-width:360px}

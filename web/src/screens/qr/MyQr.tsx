@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import QRCode from "qrcode";
-import { RefreshCw, ScanLine } from "lucide-react";
+import { Link2, RefreshCw, ScanLine } from "lucide-react";
 import Header from "../../layout/Header";
 import Alert from "../../ui/Alert";
 import Button from "../../ui/Button";
+import BlockQr from "../../ui/BlockQr";
 import { Api } from "../../lib/api";
 import { useLoad } from "../../lib/useLoad";
 import { canBeMatched, isPast } from "../../lib/eventFormat";
@@ -52,6 +53,14 @@ export default function MyQr() {
     if (code && now > code.expiresAt - 15_000) void make();
   }, [now, code, make]);
 
+  const [copied, setCopied] = useState(false);
+  async function copyLink() {
+    if (!code) return;
+    await navigator.clipboard?.writeText(code.url).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
   const left = code ? Math.max(0, Math.round((code.expiresAt - now) / 1000)) : 0;
   const scanner = "BarcodeDetector" in window;
 
@@ -78,11 +87,7 @@ export default function MyQr() {
         {error && <Alert tone="destructive" title="Klick couldn't make your code" action={<Button variant="outline" size="sm" onClick={make}>Retry</Button>}>Check your connection and try again.</Alert>}
 
         <div className="k-qr">
-          {code ? (
-            <div className="k-qr__code" role="img" aria-label="Your Klick QR code" dangerouslySetInnerHTML={{ __html: code.svg }} />
-          ) : (
-            <div className="k-qr__code k-qr__code--loading" aria-hidden="true" />
-          )}
+          {code ? <BlockQr url={code.url} svg={code.svg} /> : <div className="k-qr__code k-qr__code--loading" aria-hidden="true" />}
           <p className="k-muted k-qr__timer" aria-live="polite">
             {code ? `Refreshes in ${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}` : "Making your code…"}
             <button type="button" className="pd-btn pd-btn--ghost pd-btn--icon" aria-label="New code now" onClick={make}>
@@ -90,6 +95,11 @@ export default function MyQr() {
             </button>
           </p>
         </div>
+
+        <Button variant="ghost" size="sm" disabled={!code} onClick={copyLink} style={{ alignSelf: "center" }}>
+          <Link2 className="pd-i" aria-hidden="true" />
+          {copied ? "Link copied" : "Can't scan? Copy your link"}
+        </Button>
 
         {scanner ? (
           <Link to="/scan" className="pd-btn pd-btn--outline pd-btn--lg">
