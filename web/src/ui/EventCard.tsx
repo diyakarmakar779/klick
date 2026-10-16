@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { BookmarkCheck, Check, CircleCheck, Clock, Image as ImageIcon, User } from "lucide-react";
+import { BookmarkCheck, Check, ChevronRight, CircleCheck, Clock, Image as ImageIcon, User, Users } from "lucide-react";
 import type { DiscoverItem, KlickEvent, MyEvent, PeopleSignal } from "../lib/api";
 import { canBeMatched, dateLine, isPast } from "../lib/eventFormat";
 
@@ -129,5 +129,41 @@ export function DiscoverCard({ item }: { item: DiscoverItem }) {
       prep={null}
       saved={item.saved}
     />
+  );
+}
+
+// Compact row for the rest of the member's upcoming events: thumbnail, title, date, then either
+// the status when something is pending or a one-line people summary.
+export function EventRow({ item }: { item: MyEvent }) {
+  const { event, people } = item;
+  const { badge } = status(item);
+  const parts = [
+    people.worthMeeting.count > 0 && `${people.worthMeeting.count} worth meeting`,
+    people.catchUp.count > 0 && `${people.catchUp.count} to catch up`,
+  ].filter(Boolean);
+  return (
+    <Link to={`/events/${event.id}`} className="k-erow">
+      <span className="k-erow__thumb">
+        {event.coverImageUrl ? <img src={event.coverImageUrl} alt="" loading="lazy" /> : <ImageIcon className="pd-i" aria-hidden="true" />}
+      </span>
+      <span className="k-erow__body">
+        <b>{event.title}</b>
+        <span className="k-ecard__date">{dateLine(event)}</span>
+        {badge === "pending" ? (
+          <span className="k-status k-status--pending">
+            <Clock className="pd-i" aria-hidden="true" />
+            Pending
+          </span>
+        ) : (
+          parts.length > 0 && (
+            <span className="k-erow__people">
+              <Users className="pd-i" aria-hidden="true" />
+              {parts.join(" · ")}
+            </span>
+          )
+        )}
+      </span>
+      <ChevronRight className="pd-i k-erow__chev" aria-hidden="true" />
+    </Link>
   );
 }
