@@ -132,8 +132,8 @@ export function DiscoverCard({ item }: { item: DiscoverItem }) {
   );
 }
 
-// Compact row for the rest of the member's upcoming events: thumbnail, title, date, then either
-// the status when something is pending or a one-line people summary.
+// Compact row: thumbnail, title, date, then the status when something is pending or a one-line
+// people summary. A past row shows "Went" only when attendance was verified.
 export function EventRow({ item }: { item: MyEvent }) {
   const { event, people } = item;
   const { badge } = status(item);
@@ -149,7 +149,14 @@ export function EventRow({ item }: { item: MyEvent }) {
       <span className="k-erow__body">
         <b>{event.title}</b>
         <span className="k-ecard__date">{dateLine(event)}</span>
-        {badge === "pending" ? (
+        {isPast(event) ? (
+          badge === "went" && (
+            <span className="k-status k-status--went">
+              <Check className="pd-i" aria-hidden="true" />
+              Went
+            </span>
+          )
+        ) : badge === "pending" ? (
           <span className="k-status k-status--pending">
             <Clock className="pd-i" aria-hidden="true" />
             Pending
