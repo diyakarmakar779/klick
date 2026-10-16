@@ -175,9 +175,6 @@ a.k-ecard:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
 .k-qr__code--loading{background:var(--muted)}
 .k-qr__timer{display:flex;align-items:center;gap:var(--space-1);font-size:13px;font-variant-numeric:tabular-nums}
 .k-qr-page select.pd-input{appearance:auto}
-.k-scan{position:relative;border-radius:var(--radius-xl);overflow:hidden;background:#000;aspect-ratio:1}
-.k-scan video{width:100%;height:100%;object-fit:cover;display:block}
-.k-scan__frame{position:absolute;inset:18%;border:3px solid #fff;border-radius:var(--radius-lg);box-shadow:0 0 0 999px rgb(0 0 0 / .35)}
 
 /* Memories and follow-ups */
 .pd-intent__due{color:var(--muted-foreground)}
@@ -393,10 +390,33 @@ a.k-erow:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
 .k-prof__met{display:flex;flex-direction:column;gap:4px;width:100%;max-width:360px;text-align:left;font-size:13px;font-weight:600}
 .k-prof__met select.pd-input{appearance:auto}
 
-/* Scanner with a paste fallback */
-.k-scan__wait{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:13px}
-.k-paste{display:flex;flex-direction:column;gap:8px;padding:16px;border:1px solid var(--border);border-radius:16px;background:var(--card,#fff)}
-.k-paste label{font-size:14px;color:var(--muted-foreground)}
-.k-paste label b{color:var(--foreground)}
+/* Scanner: full screen over the app, from Sivasurya's "Scan a Klick QR" */
+.k-scanner{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;background:#141414;color:#fff;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+.k-scanner__camera{position:absolute;inset:0;background:radial-gradient(120% 70% at 30% 35%,#3a3a3a 0,#1c1c1c 55%,#0f0f0f 100%)}
+.k-scanner__camera video{width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .3s}
+.k-scanner__camera video.k-scanner__video--live{opacity:1}
+.k-scanner__bar{position:relative;z-index:1;display:flex;align-items:center;gap:8px;height:56px;padding:0 8px;flex:none}
+.k-scanner__bar h1{flex:1;margin:0;font-size:16px;font-weight:600;text-align:center;color:#fff}
+.k-scanner__icon{flex:none;width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:12px;background:rgba(255,255,255,.14);color:#fff;cursor:pointer}
+.k-scanner__icon[aria-pressed="true"]{background:#fff;color:#0a0a0a}
+.k-scanner__icon--empty{background:none}
+.k-scanner__icon .pd-i{width:20px;height:20px}
+.k-scanner__body{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:0 24px;text-align:center}
+.k-scanner__frame{position:relative;width:min(280px,72vw);aspect-ratio:1;margin-bottom:20px}
+.k-scanner__frame span{position:absolute;width:44px;height:44px;border:4px solid #fff}
+.k-scanner__frame span:nth-child(1){left:0;top:0;border-right:0;border-bottom:0;border-top-left-radius:22px}
+.k-scanner__frame span:nth-child(2){right:0;top:0;border-left:0;border-bottom:0;border-top-right-radius:22px}
+.k-scanner__frame span:nth-child(3){left:0;bottom:0;border-right:0;border-top:0;border-bottom-left-radius:22px}
+.k-scanner__frame span:nth-child(4){right:0;bottom:0;border-left:0;border-top:0;border-bottom-right-radius:22px}
+.k-scanner__line{position:absolute;left:24px;right:24px;top:50%;height:2px;background:var(--brand,#3d75e8);border-radius:2px;animation:k-scanline 2.4s ease-in-out infinite}
+@keyframes k-scanline{0%,100%{top:18%}50%{top:82%}}
+@media (prefers-reduced-motion:reduce){.k-scanner__line{animation:none}}
+.k-scanner__hint{margin:0;font-size:15px;font-weight:600;color:#fff}
+.k-scanner__sub{margin:0;max-width:310px;font-size:13px;color:rgba(255,255,255,.78)}
+.k-scanner__actions{position:relative;z-index:1;display:flex;flex-direction:column;gap:10px;padding:0 16px 32px}
+.k-scanner__btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;height:48px;padding:0 24px;border:0;border-radius:16px;background:transparent;color:#fff;font:600 16px/1 var(--font-sans);text-decoration:none;cursor:pointer}
+.k-scanner__btn--soft{background:rgba(255,255,255,.14)}
+.k-scanner__btn .pd-i{width:20px;height:20px}
+.k-scanner__btn:focus-visible,.k-scanner__icon:focus-visible{outline:2px solid #fff;outline-offset:2px}
 .k-paste__row{display:flex;gap:8px}
 .k-paste__row .pd-input{flex:1;min-width:0}
