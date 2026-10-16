@@ -103,6 +103,9 @@ describe("ingestion and membership", () => {
     await onboard("ravi");
     let page = (await call("asha", "GET", `/v1/events/${ev}`)).body;
     expect(page.onPlatformGoing).toEqual({ count: null, label: "fewer than 3" });
+    expect(page.effectiveVisibility).toBe("confirmed_attendees"); // my own setting, for the page's switch
+    await call("asha", "PUT", `/v1/events/${ev}/goal`, { goal: "Meet climate founders" });
+    expect((await call("asha", "GET", `/v1/events/${ev}`)).body.goal).toBe("Meet climate founders");
     await onboard("meera");
     await onboard("hidden_hema", "hidden");
     page = (await call("asha", "GET", `/v1/events/${ev}`)).body;
