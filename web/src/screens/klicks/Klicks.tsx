@@ -49,7 +49,7 @@ export default function Klicks() {
   const { data, error, reload } = useLoad(() => Api.connections());
   const [view, setView] = useState<View>("requests");
   const [accepting, setAccepting] = useState<KlickItem | null>(null);
-  const [klicked, setKlicked] = useState<{ name: string; detail: string } | null>(null);
+  const [klicked, setKlicked] = useState<{ id: string; name: string; detail: string } | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
   const all = data ?? [];
@@ -106,19 +106,26 @@ export default function Klicks() {
                   </div>
                 )}
                 {view === "klicked" && (
-                  <dl className="k-contact">
-                    {Object.entries(item.sharedContact).map(([f, v]) => (
-                      <div key={f}>
-                        <dt>{FIELD_LABEL[f as ContactField]}</dt>
-                        <dd>
-                          <a href={href(f as ContactField, v!)} target="_blank" rel="noreferrer">
-                            {v}
-                          </a>
-                        </dd>
-                      </div>
-                    ))}
-                    {Object.keys(item.sharedContact).length === 0 && <p className="k-muted">Only your names were shared.</p>}
-                  </dl>
+                  <>
+                    <dl className="k-contact">
+                      {Object.entries(item.sharedContact).map(([f, v]) => (
+                        <div key={f}>
+                          <dt>{FIELD_LABEL[f as ContactField]}</dt>
+                          <dd>
+                            <a href={href(f as ContactField, v!)} target="_blank" rel="noreferrer">
+                              {v}
+                            </a>
+                          </dd>
+                        </div>
+                      ))}
+                      {Object.keys(item.sharedContact).length === 0 && <p className="k-muted">Only your names were shared.</p>}
+                    </dl>
+                    <div className="pd-actions">
+                      <Link to={`/klicks/${item.connection.id}`} className="pd-btn pd-btn--outline pd-btn--sm">
+                        Memories and follow-ups
+                      </Link>
+                    </div>
+                  </>
                 )}
                 {view === "sent" && <p className="k-muted" style={{ marginTop: "var(--space-3)", fontSize: 13 }}>Waiting for them to accept.</p>}
               </Person>
@@ -149,6 +156,7 @@ export default function Klicks() {
             await Api.actOnConnection(accepting.connection.id, "accept", fields);
             const shared = ["name", ...fields.map((f) => FIELD_LABEL[f].toLowerCase())].join(", ");
             setKlicked({
+              id: accepting.connection.id,
               name: firstName(accepting.other?.displayName ?? "them"),
               detail: `${accepting.event ? `${accepting.event.title}. ` : ""}You shared: ${shared}.`,
             });
@@ -162,8 +170,11 @@ export default function Klicks() {
         <Sheet title="Klicked" onClose={() => setKlicked(null)}>
           <div style={{ marginTop: "var(--space-3)" }}>
             <KlickSuccess name={klicked.name} detail={klicked.detail}>
-              <Button variant="primary" onClick={() => setKlicked(null)}>
-                Done
+              <Link to={`/klicks/${klicked.id}`} className="pd-btn pd-btn--primary">
+                Add a memory
+              </Link>
+              <Button variant="ghost" onClick={() => setKlicked(null)}>
+                Later
               </Button>
             </KlickSuccess>
           </div>

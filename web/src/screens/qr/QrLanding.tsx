@@ -17,7 +17,7 @@ export default function QrLanding() {
   const { token = "" } = useParams();
   const { data, error } = useLoad(() => Api.previewQr(token), [token]);
   const [asking, setAsking] = useState(false);
-  const [done, setDone] = useState<{ accepted: boolean; shared: string } | null>(null);
+  const [done, setDone] = useState<{ id: string; accepted: boolean; shared: string } | null>(null);
 
   const name = data ? firstName(data.profile.displayName) : "";
 
@@ -46,9 +46,15 @@ export default function QrLanding() {
             name={name}
             detail={done.accepted ? `${data.event ? `${data.event.title}. ` : ""}You shared: ${done.shared}.` : `Request sent. ${name} decides what to share, and you'll see it in Klicks.`}
           >
-            <Link to="/klicks" className="pd-btn pd-btn--primary">
-              Go to Klicks
-            </Link>
+            {done.accepted ? (
+              <Link to={`/klicks/${done.id}`} className="pd-btn pd-btn--primary">
+                Add a memory
+              </Link>
+            ) : (
+              <Link to="/klicks" className="pd-btn pd-btn--primary">
+                Go to Klicks
+              </Link>
+            )}
           </KlickSuccess>
         )}
 
@@ -90,7 +96,7 @@ export default function QrLanding() {
           onClose={() => setAsking(false)}
           onSubmit={async (fields, note) => {
             const conn = await Api.requestByQr(token, fields, note);
-            setDone({ accepted: conn.status === "accepted", shared: ["name", ...fields.map((f) => FIELD_LABEL[f].toLowerCase())].join(", ") });
+            setDone({ id: conn.id, accepted: conn.status === "accepted", shared: ["name", ...fields.map((f) => FIELD_LABEL[f].toLowerCase())].join(", ") });
             setAsking(false);
           }}
         />
