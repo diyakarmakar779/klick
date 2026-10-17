@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { Api, ApiError, type Me, type OnboardingStep } from "./api";
 
-const STEPS: OnboardingStep[] = ["consent", "block", "identity", "profile", "questionnaire", "sharing", "discoverability", "integrations", "review"];
+const STEPS: OnboardingStep[] = ["account", "consent", "identity", "integrations", "questionnaire"];
 import { auth } from "./firebase";
 
 interface MeState {
@@ -39,9 +39,9 @@ export function MeProvider({ children }: { children: ReactNode }) {
   return <Ctx.Provider value={{ me, error, setMe, refresh }}>{children}</Ctx.Provider>;
 }
 
-// Local design review only (npm run dev, then ?preview, or ?preview=<onboarding step> such as consent or review).
+// Local design review only (npm run dev, then ?preview, or ?preview=<onboarding step> such as account or consent).
 function previewMe(step: string): Me {
-  const full = step === "done" || step === "review" || !step;
+  const full = step === "done" || !step;
   return {
     id: "preview",
     displayName: "Diya Karmakar",

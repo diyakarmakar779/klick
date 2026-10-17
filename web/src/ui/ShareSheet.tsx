@@ -25,11 +25,7 @@ export default function ShareSheet({
   const { me, setMe } = useMe();
   const saved = me?.contact ?? {};
   const [contact, setContact] = useState<Draft>(saved);
-  // Starts from the member's "after you both accept" defaults; website and X have no default, so they follow what's filled in.
-  const after: string[] | undefined = me?.sharing?.afterAccept;
-  const [chosen, setChosen] = useState<Set<ContactField>>(
-    () => new Set((Object.keys(saved) as ContactField[]).filter((k) => saved[k] && (!after || !["linkedin", "email", "phone"].includes(k) || after.includes(k)))),
-  );
+  const [chosen, setChosen] = useState<Set<ContactField>>(() => new Set(Object.keys(saved).filter((k) => saved[k as ContactField]) as ContactField[]));
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");

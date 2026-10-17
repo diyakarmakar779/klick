@@ -237,17 +237,7 @@ export interface Accessibility {
   quietSpaces: boolean;
 }
 
-export type OnboardingStep =
-  | "consent"
-  | "block"
-  | "identity"
-  | "profile"
-  | "questionnaire"
-  | "sharing"
-  | "discoverability"
-  | "integrations"
-  | "review"
-  | "done";
+export type OnboardingStep = "account" | "consent" | "identity" | "integrations" | "questionnaire" | "done";
 
 export type BlockColor = "red" | "yellow" | "green" | "blue";
 export type BlockStuds = 1 | 4 | 6 | 8;
