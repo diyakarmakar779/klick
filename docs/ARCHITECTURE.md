@@ -102,7 +102,7 @@ flowchart LR
 | 6 | QR: show, scan, preview, request, accept with chosen fields | `POST /v1/qr`, `GET /v1/qr/:token`, `POST /v1/connections`, `POST /v1/connections/:id/accept` | — |
 | 7 | Voice note → memory → follow-up | `POST /v1/uploads`, `POST /v1/memories`, `POST /v1/memories/:id/analyze`, `POST …/review`, `POST /v1/followups` | **memory.extract** |
 | 8 | Advance time → draft → member sends it themselves | `POST /jobs/reconnect` (demo `now`), `POST /v1/followups/:id/draft`, `POST /v1/followups/:id/sent` | **reconnect.draft** |
-| 9 | Discover: events your Klicks are going to, save or plan to attend | `GET /v1/discover`, `GET /v1/discover/:id`, `PUT /v1/events/:id/save`, `POST /v1/events/:id/plan` | — |
+| 9 | Discover: Luma events your Klicks are going to, save or plan to attend | `GET /v1/discover`, `GET /v1/discover/:id`, `PUT /v1/events/:id/save`, `POST /v1/events/:id/plan` | — |
 | 10 | Ask Klick AI about an event: who to meet, how to prep | `POST /v1/events/:id/ai-chats`, `POST /v1/ai-chats/:id/messages` | **chat.answer** |
 | 11 | Message someone you Klicked with | `GET /v1/chats`, `GET/POST /v1/dm/:connectionId` | — |
 
@@ -284,7 +284,7 @@ Branch per feature, PR into `main`, CI must pass (backend typecheck and tests, w
 | Location, notifications, help and share settings | No backend yet |
 | Embedding recall for very large events | Not needed at current scale; the vector index is in place |
 | Sharing cards and invites (`docs/RECOMMENDATIONS.md` §3) | Designed, not built |
-| Ranked event recommendations | Discover lists events your Klicks are going to, by date. The score in `docs/RECOMMENDATIONS.md` §2 (topic match, Klicks going, members going, freshness) and events with no Klick going are not built |
+| Ranked event recommendations | Discover lists Luma events your Klicks are going to, by date. The score in `docs/RECOMMENDATIONS.md` §2 (topic match, Klicks going, members going, freshness) and events with no Klick going are not built |
 | Showing a shared memory to the person it was shared with | Sharing is recorded; the recipient's view isn't built |
 | Disconnecting a source from the web app | The API supports it; there's no button yet |
 | Caching match results | Matches are re-ranked on each page load |
