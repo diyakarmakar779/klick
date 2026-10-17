@@ -72,6 +72,29 @@ export const Questionnaire = z.object({
   updatedAt: timestamp,
 });
 export type Questionnaire = z.infer<typeof Questionnaire>;
+// The member's block: how they look on Klick. Colour and studs are style only, never rank or value.
+export const BLOCK_COLORS = ["red", "yellow", "green", "blue"] as const;
+export const MemberBlock = z.object({
+  color: z.enum(BLOCK_COLORS).default("blue"),
+  studs: z.union([z.literal(1), z.literal(4), z.literal(6), z.literal(8)]).default(4),
+});
+
+// What people see before a Klick and after both accept. The name is always shown.
+// Contact details (linkedin, email, phone) are never shown before a Klick, so they only appear in afterAccept.
+export const SHARE_ITEMS = ["photo", "role_company", "location", "linkedin", "email", "phone"] as const;
+export const ShareItem = z.enum(SHARE_ITEMS);
+export type ShareItem = z.infer<typeof ShareItem>;
+const BEFORE_KLICK = ["photo", "role_company", "location"] as const;
+export const SharingDefaults = z.object({
+  beforeKlick: z.array(z.enum(BEFORE_KLICK)).default(["photo", "role_company"]),
+  afterAccept: z.array(ShareItem).default(["photo", "role_company", "location", "linkedin"]),
+});
+export type SharingDefaults = z.infer<typeof SharingDefaults>;
+
+export const ONBOARDING_STEPS = ["account", "consent", "block", "identity", "integrations", "questionnaire", "done"] as const;
+export const OnboardingStep = z.enum(ONBOARDING_STEPS);
+export type OnboardingStep = z.infer<typeof OnboardingStep>;
+
 export const Member = z.object({
   id: z.string(), // Firebase Auth uid
   displayName: z.string().min(1).max(80),
@@ -79,6 +102,9 @@ export const Member = z.object({
   role: z.string().max(80).default(""),
   company: z.string().max(80).default(""),
   bio: z.string().max(1000).default(""),
+  location: z.string().max(80).default(""), // e.g. "Bengaluru, India (IST)", typed by the member
+  block: MemberBlock.default({}),
+  sharing: SharingDefaults.default({}),
   interests: z.array(z.string().max(40)).max(20).default([]),
   goals: z.array(z.string().max(140)).max(10).default([]),
   languages: z.array(z.string()).default(["en"]),
@@ -91,6 +117,8 @@ export const Member = z.object({
     })
     .default({}),
   defaultVisibility: Visibility.default("hidden"),
+  // Onboarding's "Who can find you at events?": ask per event and never both keep the default hidden.
+  discoverability: z.enum(["ask", "events", "never"]).default("ask"),
   contact: z.record(ContactField, z.string().max(200)).default({}),
   // "review": every request waits for approval. "auto_accept": showing your QR is your consent.
   connectionPreference: z.enum(["review", "auto_accept"]).default("review"),
@@ -102,7 +130,8 @@ export const Member = z.object({
   questionnaire: Questionnaire.nullable().default(null),
   onboarding: z
     .object({
-      step: z.enum(["identity", "integrations", "questionnaire", "done"]).default("identity"),
+      // Welcome and sign-in come first; the steps below run once signed in. Older members may be on any of them.
+      step: OnboardingStep.default("account"),
       completedAt: timestamp.nullable().default(null),
     })
     .default({}),

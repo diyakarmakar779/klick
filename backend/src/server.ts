@@ -39,9 +39,10 @@ import {
   finishIntegrations,
   saveQuestionnaire,
   setLinkedInCandidate,
+  setOnboardingStep,
   skipIdentity,
 } from "./db/repos/onboarding.js";
-import { LinkedInUsername, Questionnaire } from "./db/schema.js";
+import { LinkedInUsername, OnboardingStep, Questionnaire } from "./db/schema.js";
 import {
   createFollowUp,
   createMemory,
@@ -114,7 +115,11 @@ export function buildServer() {
         return m ? publicProfile(m) : reply.code(404).send({ error: "Not found" });
       });
 
-      // ---- Onboarding: LinkedIn "Is this you?" -> integrations -> questionnaire
+      // ---- Onboarding: verified email -> consent -> block -> LinkedIn -> sources -> who you want to meet
+      api.put("/onboarding/step", async (req) => {
+        const { step } = z.object({ step: OnboardingStep }).parse(req.body);
+        return ownProfile(await setOnboardingStep(req.memberId, step));
+      });
       // The server makes the state and checks it on return, so a sign-in can't be started by another site.
       api.get("/onboarding/linkedin/start", async (req, reply) => {
         const { redirectUri } = z.object({ redirectUri: z.string().url() }).parse(req.query);

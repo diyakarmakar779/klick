@@ -33,6 +33,7 @@ export const Api = {
   me: () => api<Me>("/v1/me"),
   saveMe: (body: Partial<Omit<Me, "id" | "onboarding" | "linkedin" | "questionnaire">>) => api<Me>("/v1/me", { method: "PUT", body }),
   skipIdentity: () => api<Me>("/v1/onboarding/identity/skip", { method: "POST" }),
+  setStep: (step: OnboardingStep) => api<Me>("/v1/onboarding/step", { method: "PUT", body: { step } }),
   finishIntegrations: () => api<Me>("/v1/onboarding/integrations/done", { method: "POST" }),
   saveQuestionnaire: (body: Omit<Questionnaire, "updatedAt">) => api<Me>("/v1/onboarding/questionnaire", { method: "PUT", body }),
   sources: () => api<Array<{ provider: string; syncState: string; lastSyncAt: string | null }>>("/v1/sources"),
@@ -151,6 +152,7 @@ export interface PublicProfile {
   headline: string;
   role: string;
   company: string;
+  location?: string;
 }
 
 export interface EventPage {
@@ -235,21 +237,33 @@ export interface Accessibility {
   quietSpaces: boolean;
 }
 
+export type OnboardingStep = "account" | "consent" | "block" | "identity" | "integrations" | "questionnaire" | "done";
+
+export type BlockColor = "red" | "yellow" | "green" | "blue";
+export type BlockStuds = 1 | 4 | 6 | 8;
+export type ShareItem = "photo" | "role_company" | "location" | "linkedin" | "email" | "phone";
+
 export interface Me {
   id: string;
   displayName: string;
   headline: string;
   role: string;
   company: string;
+  bio: string;
+  location: string;
+  block: { color: BlockColor; studs: BlockStuds };
+  // The name is always shown. Contact details only ever appear after both accept.
+  sharing: { beforeKlick: Array<"photo" | "role_company" | "location">; afterAccept: ShareItem[] };
   interests: string[];
   goals: string[];
   accessibility: Accessibility;
   defaultVisibility: Visibility;
+  discoverability: "ask" | "events" | "never";
   contact: Partial<Record<ContactField, string>>;
   linkedin: (LinkedInCandidate & { confirmedAt: string }) | null;
   linkedinProfile: { username: string; url: string; source: "self_reported"; addedAt: string } | null;
   questionnaire: Questionnaire | null;
-  onboarding: { step: "identity" | "integrations" | "questionnaire" | "done"; completedAt: string | null };
+  onboarding: { step: OnboardingStep; completedAt: string | null };
 }
 
 export interface QrPreview {

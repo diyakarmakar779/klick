@@ -116,7 +116,7 @@ export async function connectionView(id: string, memberId: string) {
   const sharedContact = Object.fromEntries(fields.filter((f) => other?.contact[f]).map((f) => [f, other!.contact[f]]));
   return {
     connection: conn,
-    other: other ? publicProfile(other) : null,
+    other: other ? publicProfile(other, conn.status === "accepted") : null,
     sharedContact,
     iShare: conn.sharedFields[memberId] ?? [],
   };
@@ -134,7 +134,7 @@ export async function listConnectionCards(memberId: string, status?: Connection[
       return {
         connection: conn,
         incoming: conn.requestedBy !== memberId,
-        other: other ? publicProfile(other) : null,
+        other: other ? publicProfile(other, conn.status === "accepted") : null,
         event: event ? { id: event.id, title: event.title, startsAt: event.startsAt } : null,
         sharedContact: Object.fromEntries(fields.filter((f) => other?.contact[f]).map((f) => [f, other!.contact[f]])),
       };

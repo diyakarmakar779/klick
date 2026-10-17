@@ -2,7 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./lib/useAuth";
 import { MeProvider, useMe } from "./lib/me";
 import AppShell from "./layout/AppShell";
-import SignIn from "./screens/SignIn";
+import Entry from "./screens/entry/Entry";
 import Home from "./screens/Home";
 import Profile from "./screens/Profile";
 import Dev from "./screens/Dev";
@@ -54,7 +54,7 @@ export default function App() {
   const user = useAuth();
   if (user === undefined) return <div className="k-spinner">Loading…</div>;
   const preview = import.meta.env.DEV && new URLSearchParams(window.location.search).has("preview");
-  if (!user && !preview) return <SignIn />;
+  if (!user && !preview) return <Entry />;
   return (
     <MeProvider>
       <BrowserRouter>
