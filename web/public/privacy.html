@@ -18,7 +18,7 @@
 <h2>What we read, and only when you ask</h2>
 <ul>
   <li><strong>Google sign-in:</strong> your name, email and profile photo, so we know who you are.</li>
-  <li><strong>Google Calendar (read-only):</strong> your own events and your answer to each (organiser, going, maybe). We use the access once to import them and do not keep it. We never read other guests' details.</li>
+  <li><strong>Google Calendar (read-only):</strong> your own events and your answer to each (organiser, going, maybe). We use the access once to import them and do not keep it. We keep each event's title, time, place, link and description, and never store other guests' details.</li>
   <li><strong>Luma:</strong> the events you host or attend and your status for each. We use the access once and do not keep it. We never read guest lists, and we never create, change or send anything on Luma.</li>
   <li><strong>LinkedIn (optional):</strong> the profile link you type in. We never look you up on LinkedIn or read your LinkedIn profile.</li>
   <li><strong>What you type or record:</strong> your profile, what you're looking for at an event, notes, photos and voice notes about people you met, your questions to Klick AI, and messages to people you Klicked with.</li>
@@ -30,7 +30,7 @@
   <li>Your contact details are private. They are shared only after both people accept a connection, and only the details you pick.</li>
   <li>Your notes and memories are private to you. They are shared only if you choose to share one with that person.</li>
   <li>Your Klick AI chats are private to you. Messages with someone you Klicked with are seen only by the two of you.</li>
-  <li>There is no attendee list. Event pages show counts, and only your own connections by name.</li>
+  <li>There is no attendee list. Event pages show counts, your own Klicks by name, and, only if you chose to be found for that event, the name, role and company of others who chose the same.</li>
 </ul>
 
 <h2>How we use AI</h2>
@@ -38,8 +38,8 @@
 
 <h2>Where it's stored and how to delete it</h2>
 <ul>
-  <li>Data is stored on Google Cloud (Firestore and Cloud Storage, Mumbai region) and is only reachable through our server.</li>
-  <li>Disconnecting Calendar or Luma deletes what we imported from it. Deleting a memory deletes its photo or voice note.</li>
+  <li>Data is stored on Google Cloud (Firestore and Cloud Storage, Mumbai region) and is only reachable through our server. Gemini requests are processed on Google Cloud's global endpoint.</li>
+  <li>Disconnecting Calendar or Luma removes you from the events imported from it; the event details themselves may remain, with nothing linking them to you. Until there's a button for this in the app, email us and we'll do it. Deleting a memory deletes its photo or voice note.</li>
   <li>To delete your account and all your data, email <a href="mailto:diyakarmakar.uiux@gmail.com">diyakarmakar.uiux@gmail.com</a>.</li>
 </ul>
 

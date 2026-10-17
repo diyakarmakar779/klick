@@ -20,7 +20,7 @@ The repository and Google Cloud project keep their original names (`hey-os`, `he
 | Firestore | Members, events, Klicks, memories, follow-ups, chats |
 | Gemini on Vertex AI | Who to meet and why, turning notes and voice into memories, follow-up drafts, and Klick AI chat about an event, all with schema-checked output |
 | Cloud Storage | Private voice notes and photos, uploaded with signed URLs |
-| Secret Manager, Cloud Scheduler | Secrets, and the hourly reconnection job |
+| Secret Manager, Cloud Scheduler | Secrets, and an optional hourly reconnection job |
 
 ## Layout
 
@@ -46,7 +46,7 @@ docs/                    Architecture and recommendations
 
 ## Try it
 
-Sign in with Google at https://hey-os-511517.web.app and finish onboarding. To see every feature with data in it, choose **Demo events** in the "Where your events live" step (or later from Profile, Connected accounts). It adds two sample events, three Klicks you met at a past meetup, one pending request, a private note with a follow-up, and a few messages. Sample people are clearly fictional and use `example.com` addresses.
+Sign in with Google at https://hey-os-511517.web.app and finish onboarding. To see every feature with data in it, choose **Demo events** in the "Where do your events live?" onboarding step (or later from Profile, Connected accounts). It adds two sample events, three Klicks you met at a past meetup, one pending request, a private note with a follow-up, and a few messages. Sample people are clearly fictional and use `example.com` addresses.
 
 ## Run locally
 
@@ -82,17 +82,17 @@ PROJECT_ID=your-project-id ./infra/gcp-setup.sh
 cd web && npm run build && cd .. && npx -y firebase-tools deploy --only hosting
 ```
 
-The script creates or reuses the project, checks billing, enables APIs, creates Firestore (asia-south1), a private media bucket, a least-privilege service account and its secrets, adds Firebase, deploys rules and indexes, deploys the API to Cloud Run and schedules the hourly reconnection job.
+The script creates or reuses the project, checks billing, enables APIs, creates Firestore (asia-south1), a private media bucket, a least-privilege service account and its secrets, adds Firebase, deploys rules and indexes, deploys the API to Cloud Run and, with `SCHEDULER=1`, schedules the hourly reconnection job. Set a budget alert by hand.
 
 ## Rules the code enforces
 
-- Klick imports only your own events and never stores guest lists. Event pages show counts, floored at "fewer than 3", and only your own Klicks who are going.
+- Klick imports only your own events and never stores guest lists. Event pages show counts, floored at "fewer than 3", your own Klicks who are going, and, only if you are findable for that event, others who chose to be found.
 - "Attended" comes only from a provider check-in record; anything else shows as "Planning to attend". Attendance is never inferred.
 - Suggestions only include members who chose to be findable at that event, and only if you are findable too.
 - A Klick needs the other person to accept; either side can end it or block. Contact details are shown only after both accept, and only the fields each person chose.
 - Memories are private to their owner. Klick AI chats are private to their owner.
 - Follow-ups and messages are never sent for you.
-- Disconnecting a source deletes every event membership it created.
+- Disconnecting a source (API only for now) deletes every event membership it created.
 
 ## API (all under `/v1`, Bearer Firebase ID token)
 
