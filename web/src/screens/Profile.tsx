@@ -19,7 +19,6 @@ import {
   RefreshCw,
   Target,
   Users,
-  Wrench,
 } from "lucide-react";
 import { auth } from "../lib/firebase";
 import Header from "../layout/Header";
@@ -510,7 +509,6 @@ export default function Profile() {
               hint={cal ? (cal.lastSyncAt ? `Synced ${ago(cal.lastSyncAt)}` : "Connected") : "Not connected"}
               onClick={() => setSheet("accounts")}
             />
-            <SettingRow icon={<Wrench className="pd-i" />} title="Test panel" hint="Demo tools, for testing only" to="/dev" />
             <SettingRow icon={<LogOut className="pd-i" />} title="Sign out" danger onClick={() => signOut(auth)} />
           </section>
         </div>
