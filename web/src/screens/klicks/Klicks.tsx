@@ -10,12 +10,9 @@ import Sheet from "../../ui/Sheet";
 import ShareSheet from "../../ui/ShareSheet";
 import { Api, type ContactField, type KlickItem } from "../../lib/api";
 import { useLoad } from "../../lib/useLoad";
-import { FIELD_LABEL, firstName, initials, roleLine } from "../../lib/people";
+import { contactHref, FIELD_LABEL, firstName, initials, roleLine } from "../../lib/people";
 
 type View = "requests" | "klicked" | "sent";
-
-const href = (f: ContactField, v: string) =>
-  f === "email" ? `mailto:${v}` : f === "phone" ? `tel:${v.replace(/\s/g, "")}` : f === "x" ? `https://x.com/${v.replace(/^@/, "")}` : /^https?:\/\//.test(v) ? v : `https://${v}`;
 
 function Person({ item, children }: { item: KlickItem; children?: React.ReactNode }) {
   const name = item.other?.displayName ?? "A Klick member";
@@ -112,7 +109,7 @@ export default function Klicks() {
                         <div key={f}>
                           <dt>{FIELD_LABEL[f as ContactField]}</dt>
                           <dd>
-                            <a href={href(f as ContactField, v!)} target="_blank" rel="noreferrer">
+                            <a href={contactHref(f as ContactField, v!)} target="_blank" rel="noreferrer">
                               {v}
                             </a>
                           </dd>

@@ -39,3 +39,7 @@ export function speak(text: string) {
   window.speechSynthesis.speak(u);
   return true;
 }
+
+// A link that opens a shared contact detail: mail, phone, or the profile page.
+export const contactHref = (f: ContactField, v: string) =>
+  f === "email" ? `mailto:${v}` : f === "phone" ? `tel:${v.replace(/\s/g, "")}` : f === "x" ? `https://x.com/${v.replace(/^@/, "")}` : /^https?:\/\//.test(v) ? v : `https://${v}`;
