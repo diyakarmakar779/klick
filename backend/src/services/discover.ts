@@ -1,5 +1,6 @@
 // Discover: upcoming events the member isn't part of yet, found only through their own accepted Klicks.
-// An event shows up only when at least one Klick is going and lets their Klicks see it (not hidden).
+// An event shows up only when it came from Luma and at least one Klick is going and lets their Klicks see it (not hidden).
+// Calendar-only events are left out: they can be private meetings.
 // Never a catalogue, never a guest list: Klicks are named (the member knows them), everyone else is a floored count.
 import { getDb, fromFirestore } from "../db/firestore.js";
 import { COLLECTIONS, EventMembership } from "../db/schema.js";
@@ -49,6 +50,8 @@ async function discoverableCount(eventId: string, exclude: Set<string>) {
 }
 
 const savedId = (ownerId: string, eventId: string) => `${ownerId}__${eventId}`;
+const LUMA = new Set(["luma_mcp", "mock_luma"]);
+const fromLuma = (event: { sourceRefs: Array<{ provider: string }> }) => event.sourceRefs.some((r) => LUMA.has(r.provider));
 
 export async function discoverEvents(memberId: string) {
   const [byEvent, mine, savedSnap] = await Promise.all([
@@ -64,7 +67,7 @@ export async function discoverEvents(memberId: string) {
       .filter(([eventId]) => !myEvents.has(eventId))
       .map(async ([eventId, klicks]) => {
         const event = await getEvent(eventId);
-        if (!event || new Date(event.endsAt ?? event.startsAt).getTime() < now) return null;
+        if (!event || !fromLuma(event) || new Date(event.endsAt ?? event.startsAt).getTime() < now) return null;
         const klickIds = new Set(klicks.map((k) => k.other));
         const names = await Promise.all(klicks.slice(0, 3).map(async (k) => initials((await getMember(k.other))?.displayName ?? "")));
         const worth = await discoverableCount(eventId, new Set([memberId, ...klickIds]));
@@ -84,7 +87,7 @@ export async function discoverEvents(memberId: string) {
 // Discover detail for an event the member isn't on: only reachable through a Klick going.
 export async function discoverEvent(memberId: string, eventId: string) {
   const event = await getEvent(eventId);
-  if (!event) throw new ConsentError("Not found", 404);
+  if (!event || !fromLuma(event)) throw new ConsentError("Not found", 404);
   const klicks = (await klicksGoingByEvent(memberId)).get(eventId) ?? [];
   if (klicks.length === 0) throw new ConsentError("Not found", 404);
   const klickIds = new Set(klicks.map((k) => k.other));

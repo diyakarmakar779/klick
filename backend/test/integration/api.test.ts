@@ -190,18 +190,22 @@ describe("ingestion and membership", () => {
     expect((await call("asha", "GET", `/v1/events/${ev}`)).body.saved).toEqual([]);
   });
 
-  it("discover finds upcoming events only through accepted Klicks who let Klicks see them", async () => {
+  it("discover finds upcoming Luma events only through accepted Klicks who let Klicks see them", async () => {
     await onboard("asha");
     await call("ravi", "PUT", "/v1/me", { displayName: "Ravi Menon", defaultVisibility: "connections" });
-    const [future] = await importEvents("ravi", "google_calendar", [{
-      externalId: "future@google.com", title: "Design Mixer", description: "", startsAt: new Date(Date.now() + 5 * 86400000), state: "registered",
+    const [future] = await importEvents("ravi", "luma_mcp", [{
+      externalId: "evt-future", title: "Design Mixer", description: "", startsAt: new Date(Date.now() + 5 * 86400000), state: "registered",
+    }]);
+    const [meeting] = await importEvents("ravi", "google_calendar", [{
+      externalId: "private@google.com", title: "Design Mixer prep", description: "", startsAt: new Date(Date.now() + 4 * 86400000), state: "registered",
     }]);
     expect((await call("asha", "GET", "/v1/discover")).body).toEqual([]); // not Klicks yet
     expect((await call("asha", "GET", `/v1/discover/${future}`)).status).toBe(404);
     const req = await call("ravi", "POST", "/v1/connections", { to: "asha", eventId: null, context: "" });
     await call("asha", "POST", `/v1/connections/${req.body.id}/accept`);
     const list = (await call("asha", "GET", "/v1/discover")).body;
-    expect(list.map((r: { event: { id: string } }) => r.event.id)).toEqual([future]);
+    expect(list.map((r: { event: { id: string } }) => r.event.id)).toEqual([future]); // Calendar-only events never show
+    expect((await call("asha", "GET", `/v1/discover/${meeting}`)).status).toBe(404);
     expect(list[0].catchUp).toEqual({ count: 1, initials: ["RM"] });
     expect(list[0].worthMeeting.label).toBe("fewer than 3");
     const detail = (await call("asha", "GET", `/v1/discover/${future}`)).body;
