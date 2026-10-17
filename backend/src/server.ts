@@ -59,6 +59,8 @@ import { unsavePerson } from "./db/repos/saves.js";
 import { discoverEvent, discoverEvents, planToAttend, setEventSaved } from "./services/discover.js";
 import { AiError } from "./ai/client.js";
 import { analyzeMemory, draftFollowUp, draftFollowUpById, eventPeopleDetail, eventPeopleSummary, saveSuggestion, suggestMatches } from "./services/ai.js";
+import { continueAiChat, deleteAiChat, directThread, getAiChat, listChats, listEventAiChats, startAiChat } from "./services/chat.js";
+import { sendDirectMessage } from "./db/repos/dm.js";
 import { CALENDAR_SCOPE, fetchCalendarEvents } from "./lib/googleCalendar.js";
 import { clientMetadataDocument, fetchLumaEvents, finishLumaAuth, startLumaAuth } from "./lib/lumaMcp.js";
 import { newState, saveOAuthState, takeOAuthState } from "./db/repos/oauthStates.js";
@@ -306,6 +308,25 @@ export function buildServer() {
       });
       // ---- Gemini matches for an event (eligibility is checked before the model sees anyone)
       api.get("/events/:eventId/matches", async (req) => suggestMatches(req.memberId, (req.params as { eventId: string }).eventId));
+
+      // ---- Chats: Klick AI chats (owner only, about one of the member's events) and direct messages with accepted Klicks
+      const Question = z.object({ text: z.string().trim().min(1).max(500) });
+      api.get("/chats", async (req) => listChats(req.memberId));
+      api.get("/events/:eventId/ai-chats", async (req) => listEventAiChats(req.memberId, (req.params as { eventId: string }).eventId));
+      api.post("/events/:eventId/ai-chats", async (req) =>
+        startAiChat(req.memberId, (req.params as { eventId: string }).eventId, Question.parse(req.body).text),
+      );
+      api.get("/ai-chats/:id", async (req) => getAiChat(req.memberId, (req.params as { id: string }).id));
+      api.post("/ai-chats/:id/messages", async (req) => continueAiChat(req.memberId, (req.params as { id: string }).id, Question.parse(req.body).text));
+      api.delete("/ai-chats/:id", async (req) => {
+        await deleteAiChat(req.memberId, (req.params as { id: string }).id);
+        return { ok: true };
+      });
+      api.get("/dm/:connectionId", async (req) => directThread(req.memberId, (req.params as { connectionId: string }).connectionId));
+      api.post("/dm/:connectionId", async (req) => {
+        const { text } = z.object({ text: z.string().trim().min(1).max(2000) }).parse(req.body);
+        return sendDirectMessage((req.params as { connectionId: string }).connectionId, req.memberId, text);
+      });
 
       // ---- QR exchange: show a code, the scanner previews, then sends a request
       api.post("/qr", async (req) => {

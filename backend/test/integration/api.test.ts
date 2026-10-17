@@ -534,3 +534,103 @@ describe("Gemini features through the API", () => {
     expect(bad.body.retryable).toBe(true);
   });
 });
+
+describe("chats", () => {
+  it("Klick AI only sees and shows people the member may see, and answers are re-checked when read", async () => {
+    const ev = await onboard("asha");
+    await onboard("ravi");
+    await onboard("meera");
+    await onboard("hidden_hema", "hidden");
+    const req = await call("ravi", "POST", "/v1/connections", { to: "asha", eventId: ev, context: "" });
+    await call("asha", "POST", `/v1/connections/${req.body.id}/accept`);
+    const mem = await call("asha", "POST", "/v1/memories", { kind: "text", text: "draft", connectionId: req.body.id });
+    await call("asha", "POST", `/v1/memories/${mem.body.id}/review`, { text: "Owes me the flood-alert deck" });
+    await call("asha", "PUT", `/v1/events/${ev}/goal`, { goal: "Meet climate founders" });
+    llm.responses["chat.answer"] = {
+      text: "Ravi is going. Meera is worth meeting.",
+      people: [{ id: "ravi", reason: "Your Klick" }, { id: "meera", reason: "Accessibility" }, { id: "hidden_hema", reason: "x" }, { id: "nobody", reason: "x" }],
+      eventIds: ["made-up-event"],
+      sources: ["klicks", "memory:ravi", "goals", "invented"],
+      suggestions: ["Draft an intro to Meera"],
+    };
+
+    const started = await call("asha", "POST", `/v1/events/${ev}/ai-chats`, { text: "Who from my Klicks is going?" });
+    expect(started.status).toBe(200);
+    const chatId = started.body.chat.id;
+    expect(started.body.chat.title).toBe("Who from my Klicks is going");
+    const answer = started.body.messages[1];
+    expect(answer.role).toBe("ai");
+    expect(answer.people.map((p: { kind: string; profile: { id: string } }) => [p.kind, p.profile.id])).toEqual([["klick", "ravi"], ["suggested", "meera"]]);
+    expect(answer.people[0].connectionId).toBe(req.body.id);
+    expect(answer.events).toEqual([]);
+    expect(answer.sources.map((s: { key: string }) => s.key)).toEqual(["klicks", "memory:ravi", "goals"]);
+
+    // What the model saw: Asha's own reviewed note and goal, never the hidden member.
+    const sent = JSON.stringify(llm.calls.at(-1)!.parts);
+    expect(sent).toContain("Owes me the flood-alert deck");
+    expect(sent).toContain("Meet climate founders");
+    expect(sent).not.toContain("hidden_hema");
+
+    // Owner only.
+    expect((await call("ravi", "GET", `/v1/ai-chats/${chatId}`)).status).toBe(404);
+    expect((await call("ravi", "POST", `/v1/ai-chats/${chatId}/messages`, { text: "hi" })).status).toBe(404);
+    expect((await call("outsider", "POST", `/v1/events/${ev}/ai-chats`, { text: "hi" })).status).toBe(404);
+    expect((await call("ravi", "GET", `/v1/events/${ev}/ai-chats`)).body).toEqual([]);
+
+    // A follow-up carries the earlier turns; Meera hiding later removes her from stored answers.
+    const next = await call("asha", "POST", `/v1/ai-chats/${chatId}/messages`, { text: "Draft an intro to Meera" });
+    expect(next.body.messages).toHaveLength(4);
+    expect(JSON.stringify(llm.calls.at(-1)!.parts)).toContain("Ravi is going.");
+    await call("meera", "PUT", `/v1/events/${ev}/visibility`, { visibility: "hidden" });
+    const reread = (await call("asha", "GET", `/v1/ai-chats/${chatId}`)).body;
+    expect(reread.messages[1].people.map((p: { profile: { id: string } }) => p.profile.id)).toEqual(["ravi"]);
+    expect(reread.event.id).toBe(ev);
+
+    const list = (await call("asha", "GET", "/v1/chats")).body;
+    expect(list).toMatchObject([{ kind: "ai", id: chatId, subtitle: "DevFest Pune 2026", unread: 0 }]);
+    expect((await call("asha", "GET", `/v1/events/${ev}/ai-chats`)).body).toHaveLength(1);
+    expect((await call("ravi", "DELETE", `/v1/ai-chats/${chatId}`)).status).toBe(404);
+    expect((await call("asha", "DELETE", `/v1/ai-chats/${chatId}`)).status).toBe(200);
+    expect((await call("asha", "GET", "/v1/chats")).body).toEqual([]);
+  });
+
+  it("an AI failure keeps the chat as it was and says it can be retried", async () => {
+    const ev = await onboard("asha");
+    llm.fail = true;
+    const res = await call("asha", "POST", `/v1/events/${ev}/ai-chats`, { text: "Who should I meet?" });
+    expect(res.status).toBe(503);
+    expect(res.body.retryable).toBe(true);
+    expect((await call("asha", "GET", "/v1/chats")).body).toEqual([]);
+  });
+
+  it("direct messages only flow while a Klick is accepted, with unread counts and the owner's own memory", async () => {
+    const ev = await onboard("asha");
+    await onboard("ravi");
+    const req = await call("asha", "POST", "/v1/connections", { to: "ravi", eventId: ev, context: "" });
+    const id = req.body.id;
+    expect((await call("asha", "POST", `/v1/dm/${id}`, { text: "hi" })).status).toBe(409); // still pending
+    await call("ravi", "POST", `/v1/connections/${id}/accept`);
+    await call("asha", "POST", "/v1/memories", { kind: "text", text: "Asha's private note", connectionId: id });
+    expect((await call("asha", "POST", `/v1/dm/${id}`, { text: "Great meeting you!" })).status).toBe(200);
+    expect((await call("outsider", "POST", `/v1/dm/${id}`, { text: "x" })).status).toBe(404);
+    expect((await call("outsider", "GET", `/v1/dm/${id}`)).status).toBe(404);
+    expect((await call("asha", "POST", `/v1/dm/${id}`, { text: "   " })).status).toBe(400);
+
+    let ravis = (await call("ravi", "GET", "/v1/chats")).body;
+    expect(ravis).toMatchObject([{ kind: "person", id, title: "asha", preview: "Great meeting you!", unread: 1 }]);
+    const thread = (await call("ravi", "GET", `/v1/dm/${id}`)).body;
+    expect(thread.messages.map((m: { text: string }) => m.text)).toEqual(["Great meeting you!"]);
+    expect(thread.memory).toBeNull(); // Asha's memory stays hers
+    expect(thread.met.eventTitle).toBe("DevFest Pune 2026");
+    expect(thread.canSend).toBe(true);
+    ravis = (await call("ravi", "GET", "/v1/chats")).body;
+    expect(ravis[0].unread).toBe(0);
+    expect((await call("asha", "GET", `/v1/dm/${id}`)).body.memory.text).toBe("Asha's private note");
+    expect((await call("asha", "GET", "/v1/chats")).body[0].preview).toBe("You: Great meeting you!");
+
+    await call("ravi", "POST", `/v1/connections/${id}/revoke`);
+    expect((await call("asha", "POST", `/v1/dm/${id}`, { text: "still there?" })).status).toBe(409);
+    expect((await call("asha", "GET", `/v1/dm/${id}`)).body.canSend).toBe(false);
+    expect((await call("asha", "GET", "/v1/chats")).body).toEqual([]);
+  });
+});
