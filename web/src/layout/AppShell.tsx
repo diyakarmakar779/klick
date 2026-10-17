@@ -1,13 +1,15 @@
-import { NavLink, Outlet } from "react-router-dom";
-import { CalendarDays, Home, QrCode, Settings, User, Users } from "lucide-react";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { CalendarDays, Home, MessageCircle, QrCode, Settings, User, Users } from "lucide-react";
 import Block from "../ui/Block";
 
 const ITEMS = [
   { to: "/", label: "Home", icon: Home, end: true },
   { to: "/events", label: "Events", icon: CalendarDays },
-  { to: "/klicks", label: "Klicks", icon: Users },
+  { to: "/chats", label: "Chat", icon: MessageCircle },
   { to: "/profile", label: "Profile", icon: User },
 ];
+// The sidebar has room for Klicks too; on phones it opens from Chats and Profile.
+const SIDEBAR = [...ITEMS.slice(0, 3), { to: "/klicks", label: "Klicks", icon: Users, end: false }, ITEMS[3]];
 
 function Sidebar({ rail }: { rail?: boolean }) {
   return (
@@ -16,7 +18,7 @@ function Sidebar({ rail }: { rail?: boolean }) {
         <Block />
         <span>Klick</span>
       </div>
-      {ITEMS.map(({ to, label, icon: Icon, end }) => (
+      {SIDEBAR.map(({ to, label, icon: Icon, end }) => (
         <NavLink key={to} to={to} end={end} className="pd-sidebar__item" aria-label={rail ? label : undefined}>
           <Icon className="pd-i" aria-hidden="true" />
           <span className="pd-sidebar__label">{label}</span>
@@ -40,7 +42,9 @@ function Sidebar({ rail }: { rail?: boolean }) {
 
 // Phone: bottom nav with the raised QR. Tablet: icon rail. Desktop: full sidebar.
 export default function AppShell() {
-  const [home, events, klicks, profile] = ITEMS;
+  const [home, events, chat, profile] = ITEMS;
+  // A chat thread is full screen: its composer sits where the bottom nav would be.
+  const thread = /^\/chats\/(ai|c)\/|^\/events\/[^/]+\/ask$/.test(useLocation().pathname);
   const link = ({ to, label, icon: Icon, end }: (typeof ITEMS)[number]) => (
     <NavLink to={to} end={end}>
       <Icon className="pd-i" aria-hidden="true" />
@@ -48,7 +52,7 @@ export default function AppShell() {
     </NavLink>
   );
   return (
-    <div className="k-shell">
+    <div className={`k-shell${thread ? " k-shell--thread" : ""}`}>
       <div className="k-sidebar">
         <Sidebar rail />
         <Sidebar />
@@ -67,7 +71,7 @@ export default function AppShell() {
               <QrCode className="pd-i" aria-hidden="true" />
             </span>
           </NavLink>
-          {link(klicks)}
+          {link(chat)}
           {link(profile)}
         </nav>
       </div>

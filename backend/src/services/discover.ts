@@ -22,7 +22,7 @@ const initials = (name: string) =>
     .join("");
 
 // Klicks who are going to each upcoming event, keyed by event id.
-async function klicksGoingByEvent(memberId: string) {
+export async function klicksGoingByEvent(memberId: string) {
   const accepted = (await listConnections(memberId, "accepted")).map((c) => ({ conn: c, other: otherMember(c, memberId) }));
   const byEvent = new Map<string, typeof accepted>();
   await Promise.all(
@@ -105,7 +105,7 @@ export async function discoverEvent(memberId: string, eventId: string) {
         const metAt = conn.eventId ? await getEvent(conn.eventId) : null;
         return {
           connectionId: conn.id,
-          profile: publicProfile(m),
+          profile: publicProfile(m, true),
           memory: latest
             ? { kind: latest.kind, reviewed: latest.reviewState === "reviewed", text: latest.reviewState === "reviewed" ? latest.text : null }
             : null,

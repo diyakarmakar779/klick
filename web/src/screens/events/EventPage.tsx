@@ -4,6 +4,7 @@ import { ArrowLeft, CalendarDays, Check, ChevronRight, CircleCheck, Clock, Exter
 import Alert from "../../ui/Alert";
 import Button from "../../ui/Button";
 import SectionHead from "../../ui/SectionHead";
+import EventChats from "./EventChats";
 import ShareSheet from "../../ui/ShareSheet";
 import { ConnectedRow, RecommendedRow, ViewOnlyRow } from "../../ui/PersonRow";
 import { Api, type Match } from "../../lib/api";
@@ -278,6 +279,8 @@ export default function EventPage() {
             </div>
           </section>
         )}
+
+        <EventChats eventId={eventId} />
 
         {past && !verified && (
           <section className="k-esection">

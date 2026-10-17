@@ -88,6 +88,14 @@ export const Api = {
   previewQr: (token: string) => api<QrPreview>(`/v1/qr/${token}`),
   requestByQr: (qrToken: string, shareFields: ContactField[], context = "") =>
     api<Connection>("/v1/connections", { method: "POST", body: { qrToken, shareFields, context } }),
+  chats: () => api<ChatRow[]>("/v1/chats"),
+  eventAiChats: (eventId: string) => api<AiChat[]>(`/v1/events/${eventId}/ai-chats`),
+  startAiChat: (eventId: string, text: string) => api<AiChatView>(`/v1/events/${eventId}/ai-chats`, { method: "POST", body: { text } }),
+  aiChat: (id: string) => api<AiChatView>(`/v1/ai-chats/${id}`),
+  askAiChat: (id: string, text: string) => api<AiChatView>(`/v1/ai-chats/${id}/messages`, { method: "POST", body: { text } }),
+  deleteAiChat: (id: string) => api(`/v1/ai-chats/${id}`, { method: "DELETE" }),
+  directThread: (connectionId: string) => api<DirectThread>(`/v1/dm/${connectionId}`),
+  sendDirect: (connectionId: string, text: string) => api<DirectMessage>(`/v1/dm/${connectionId}`, { method: "POST", body: { text } }),
 };
 
 export type Visibility = "hidden" | "confirmed_attendees" | "connections";
@@ -303,4 +311,70 @@ export interface FollowUp {
   draft: string | null;
   whyNow: string | null;
   sourceMemoryId: string | null;
+}
+
+// ---- Chats
+export interface ChatRow {
+  kind: "ai" | "person";
+  id: string; // AI chat id, or the connection id for a person
+  title: string;
+  subtitle: string; // the event for an AI chat, role and company for a person
+  eventId?: string;
+  preview: string;
+  at: string;
+  unread: number;
+}
+
+export interface AiChat {
+  id: string;
+  eventId: string;
+  title: string;
+  preview: string;
+  messageCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ChatPerson {
+  kind: "klick" | "suggested";
+  connectionId?: string; // Klicks
+  profile: PublicProfile;
+  state?: MembershipState; // suggested people
+  tags?: string[];
+  saved?: boolean;
+  reason: string | null;
+}
+
+export interface AiMessage {
+  id: string;
+  role: "me" | "ai";
+  text: string;
+  people: ChatPerson[];
+  events: Array<{ event: KlickEvent; saved: boolean; catchUp: PeopleSignal }>;
+  sources: Array<{ key: string; label: string }>;
+  suggestions: string[];
+  createdAt: string;
+}
+
+export interface AiChatView {
+  chat: AiChat;
+  messages: AiMessage[];
+  event?: KlickEvent | null;
+}
+
+export interface DirectMessage {
+  id: string;
+  from: string;
+  text: string;
+  createdAt: string;
+}
+
+export interface DirectThread {
+  connectionId: string;
+  other: PublicProfile | null;
+  met: { eventTitle: string | null; at: string };
+  memory: Memory | null; // the member's own latest memory of them
+  followUp: FollowUp | null;
+  messages: DirectMessage[];
+  canSend: boolean;
 }

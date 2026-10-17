@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Mic, Sparkles, Square } from "lucide-react";
+import { ArrowLeft, MessageCircle, Mic, Sparkles, Square } from "lucide-react";
 import Header from "../../layout/Header";
 import Alert from "../../ui/Alert";
 import Button from "../../ui/Button";
@@ -125,6 +125,12 @@ export default function Person() {
             {conn.data.other && <p>{roleLine(conn.data.other)}</p>}
           </div>
         </div>
+        {accepted && (
+          <Link to={`/chats/c/${connectionId}`} className="pd-btn pd-btn--secondary">
+            <MessageCircle className="pd-i" aria-hidden="true" />
+            Message {first}
+          </Link>
+        )}
 
         {shared.length > 0 && (
           <dl className="k-contact pd-card" style={{ marginTop: 0 }}>

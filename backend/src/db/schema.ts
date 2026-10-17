@@ -15,6 +15,8 @@ export const COLLECTIONS = {
   oauthStates: "oauthStates", // 10-minute PKCE state for provider sign-in; deleted when used
   saves: "saves", // private bookmarks: people a member wants to remember to meet at an event
   savedEvents: "savedEvents", // private bookmarks of Discover events, `${ownerId}__${eventId}`
+  aiChats: "aiChats", // Klick AI chats, one owner each, about one event; messages in a subcollection
+  dmThreads: "dmThreads", // direct messages between two accepted Klicks, keyed by connection id; messages in a subcollection
 } as const;
 
 const timestamp = z.date();
@@ -296,3 +298,46 @@ export const Save = z.object({
   createdAt: timestamp,
 });
 export type Save = z.infer<typeof Save>;
+
+// ---- Klick AI chat: private to its owner, always about one of the owner's events.
+// People and events in an answer are stored as ids and re-checked against current permissions when read.
+export const AiSource = z.object({ key: z.string(), label: z.string() });
+export const AiChatMessage = z.object({
+  id: z.string(),
+  role: z.enum(["me", "ai"]),
+  text: z.string().max(4000),
+  people: z.array(z.object({ memberId: z.string(), reason: z.string().max(300).nullable() })).default([]),
+  eventIds: z.array(z.string()).default([]),
+  sources: z.array(AiSource).default([]),
+  suggestions: z.array(z.string().max(80)).default([]),
+  createdAt: timestamp,
+});
+export type AiChatMessage = z.infer<typeof AiChatMessage>;
+export const AiChat = z.object({
+  id: z.string(),
+  ownerId: z.string(),
+  eventId: z.string(),
+  title: z.string().max(80),
+  preview: z.string().max(200),
+  messageCount: z.number().int(),
+  createdAt: timestamp,
+  updatedAt: timestamp,
+});
+export type AiChat = z.infer<typeof AiChat>;
+
+// ---- Direct messages: only between two members whose Klick is accepted. Each person sends their own;
+// nothing is sent for them. When the Klick is revoked or blocked the thread stops accepting messages.
+export const DirectMessage = z.object({
+  id: z.string(),
+  from: z.string(),
+  text: z.string().min(1).max(2000),
+  createdAt: timestamp,
+});
+export type DirectMessage = z.infer<typeof DirectMessage>;
+export const DmThread = z.object({
+  id: z.string(), // the connection id
+  memberIds: z.array(z.string()).length(2),
+  last: z.object({ from: z.string(), text: z.string(), at: timestamp }).nullable(),
+  readAt: z.record(z.string(), timestamp).default({}), // per member: when they last opened the thread
+});
+export type DmThread = z.infer<typeof DmThread>;
