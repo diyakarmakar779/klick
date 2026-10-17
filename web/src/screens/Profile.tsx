@@ -219,14 +219,15 @@ function AccessibilitySheet({ me, onClose }: { me: Me; onClose: () => void }) {
 type Source = { provider: string; syncState: string; lastSyncAt: string | null };
 
 function AccountsSheet({ me, sources, onSynced, onClose }: { me: Me; sources: Source[]; onSynced: () => void; onClose: () => void }) {
-  const [busy, setBusy] = useState<"calendar" | "luma" | null>(null);
+  const [busy, setBusy] = useState<"calendar" | "luma" | "demo" | null>(null);
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
   const has = (p: string) => sources.find((s) => s.provider === p);
   const cal = has("google_calendar");
   const luma = has("luma_mcp") ?? has("luma");
+  const demo = has("mock_luma");
 
-  async function run(which: "calendar" | "luma", fn: () => Promise<string | void>) {
+  async function run(which: "calendar" | "luma" | "demo", fn: () => Promise<string | void>) {
     setBusy(which);
     setError("");
     try {
@@ -281,6 +282,26 @@ function AccountsSheet({ me, sources, onSynced, onClose }: { me: Me; sources: So
               Connect
             </Button>
           )}
+        </div>
+        <div className="k-account">
+          <span className="k-grow">
+            <b>Demo events</b>
+            <small>{demo ? "Added. Tap again to refresh the sample people" : "Sample events and people to try every feature"}</small>
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={busy !== null}
+            onClick={() =>
+              run("demo", async () => {
+                await Api.joinDemoEvents();
+                onSynced();
+                return "Demo events added, with sample Klicks, a request and messages.";
+              })
+            }
+          >
+            {busy === "demo" ? "Adding…" : demo ? "Refresh" : "Add"}
+          </Button>
         </div>
         {note && <p className="k-muted">{note}</p>}
         {error && <p className="k-error">{error}</p>}
