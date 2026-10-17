@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { Link, useSearchParams } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import {
+  Accessibility,
   BadgeCheck,
   Briefcase,
   Building2,
@@ -148,7 +149,7 @@ function PrivacySheet({ me, onClose }: { me: Me; onClose: () => void }) {
     setBusy(true);
     setError("");
     try {
-      setMe(await Api.saveMe({ defaultVisibility: on ? "confirmed_attendees" : "hidden" }));
+      setMe(await Api.saveMe({ defaultVisibility: on ? "confirmed_attendees" : "hidden", discoverability: on ? "events" : "ask" }));
     } catch (e) {
       setError(errorText(e));
     } finally {
@@ -166,6 +167,42 @@ function PrivacySheet({ me, onClose }: { me: Me; onClose: () => void }) {
           disabled={busy}
           onChange={toggle}
         />
+        {error && <p className="k-error">{error}</p>}
+      </div>
+    </Sheet>
+  );
+}
+
+const A11Y: Array<[keyof Me["accessibility"], string, string]> = [
+  ["simpleLanguage", "Simple language", "Shorter sentences in suggestions and drafts."],
+  ["readAloud", "Read aloud", "A play button on match reasons and memories."],
+  ["prefersTextFirst", "I prefer text first", "Suggest a message before meeting in person."],
+  ["quietSpaces", "Quiet spaces", "Prefer meeting away from the busy areas."],
+];
+
+function AccessibilitySheet({ me, onClose }: { me: Me; onClose: () => void }) {
+  const { setMe } = useMe();
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function toggle(key: keyof Me["accessibility"], on: boolean) {
+    setBusy(true);
+    setError("");
+    try {
+      setMe(await Api.saveMe({ accessibility: { ...me.accessibility, [key]: on } }));
+    } catch (e) {
+      setError(errorText(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Sheet title="Make Klick easier for me" description="These change how Klick talks to you. Nobody else sees them." onClose={onClose}>
+      <div className="pd-stack">
+        {A11Y.map(([key, label, hint]) => (
+          <SettingSwitch key={key} label={label} hint={hint} checked={me.accessibility[key]} disabled={busy} onChange={(on) => toggle(key, on)} />
+        ))}
         {error && <p className="k-error">{error}</p>}
       </div>
     </Sheet>
@@ -254,7 +291,7 @@ export default function Profile() {
   const klicks = useLoad(() => Api.connections("accepted"));
   const [sources, setSources] = useState<Source[]>([]);
   const [more, setMore] = useState(false);
-  const [sheet, setSheet] = useState<"edit" | "privacy" | "accounts" | null>(null);
+  const [sheet, setSheet] = useState<"edit" | "privacy" | "a11y" | "accounts" | null>(null);
   // Your blocks are your QR: "Show my QR" turns them to the scannable top view.
   // /profile?qr=1 (from the scanner or old My QR links) opens straight on the code.
   const [params] = useSearchParams();
@@ -432,6 +469,12 @@ export default function Profile() {
               hint={me.defaultVisibility === "confirmed_attendees" ? "Findable at new events" : "Hidden at new events"}
               onClick={() => setSheet("privacy")}
             />
+            <SettingRow
+              icon={<Accessibility className="pd-i" />}
+              title="Accessibility"
+              hint={A11Y.filter(([k]) => me.accessibility[k]).map(([, l]) => l).join(", ") || "Simple language, read aloud and more"}
+              onClick={() => setSheet("a11y")}
+            />
             <SettingRow icon={<Link2 className="pd-i" />} title="Connected accounts" hint={connectedNames.join(", ") || "None yet"} onClick={() => setSheet("accounts")} />
             <SettingRow
               icon={<CalendarDays className="pd-i" />}
@@ -447,6 +490,7 @@ export default function Profile() {
 
       {sheet === "edit" && <EditSheet me={me} onClose={() => setSheet(null)} />}
       {sheet === "privacy" && <PrivacySheet me={me} onClose={() => setSheet(null)} />}
+      {sheet === "a11y" && <AccessibilitySheet me={me} onClose={() => setSheet(null)} />}
       {sheet === "accounts" && <AccountsSheet me={me} sources={sources} onSynced={loadSources} onClose={() => setSheet(null)} />}
     </>
   );
