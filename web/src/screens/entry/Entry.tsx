@@ -2,21 +2,12 @@ import { useState } from "react";
 import { signInWithPopup } from "firebase/auth";
 import { CalendarDays, Lock, Send, UserRound } from "lucide-react";
 import { auth, googleProvider } from "../../lib/firebase";
-import Brick, { FlatBrick } from "../../ui/Brick";
+import Brick from "../../ui/Brick";
 import Button from "../../ui/Button";
 import Flow, { FlowError } from "../onboarding/Flow";
 import klickLogo from "../../assets/klick-logo.png";
 
 type Screen = "welcome" | "signup" | "signin";
-
-export function Logo() {
-  return (
-    <span className="k-logo">
-      <FlatBrick color="blue" width={30} />
-      Klick
-    </span>
-  );
-}
 
 // Signed out: welcome, then create account or sign in. Google is the only sign-in for now.
 export default function Entry() {
@@ -47,7 +38,6 @@ export default function Entry() {
     return (
       <div className="k-flow k-onb">
         <div className="pd-page pd-page--narrow">
-          <Logo />
           <img className="k-welcome__art" src={klickLogo} alt="Klick" width={240} height={240} />
           <h1 className="display" style={{ marginTop: "auto" }}>
             Meet someone. Klick with intention.
