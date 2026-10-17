@@ -10,7 +10,7 @@ import { Api, type ContactField, type Memory } from "../../lib/api";
 import { useMe } from "../../lib/me";
 import { useLoad } from "../../lib/useLoad";
 import { clock, useRecorder } from "../../lib/useRecorder";
-import { FIELD_LABEL, firstName, initials, roleLine } from "../../lib/people";
+import { contactHref, FIELD_LABEL, firstName, initials, roleLine } from "../../lib/people";
 
 // One Klick: what they shared, your private memories about them, and follow-ups you choose to keep.
 export default function Person() {
@@ -137,7 +137,11 @@ export default function Person() {
             {shared.map(([f, v]) => (
               <div key={f}>
                 <dt>{FIELD_LABEL[f as ContactField]}</dt>
-                <dd>{v}</dd>
+                <dd>
+                  <a href={contactHref(f as ContactField, v)} target="_blank" rel="noreferrer">
+                    {v}
+                  </a>
+                </dd>
               </div>
             ))}
           </dl>
