@@ -450,8 +450,6 @@ a.k-erow:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
 .k-note .pd-i{flex:none;margin-top:1px}
 .k-note--privacy{background:var(--privacy-soft)}
 .k-note--privacy .pd-i{color:var(--privacy)}
-.k-or{display:flex;align-items:center;gap:12px;color:var(--muted-foreground);font-size:13px}
-.k-or::before,.k-or::after{content:"";flex:1;height:1px;background:var(--border)}
 .k-tag--grey{background:var(--muted);color:var(--foreground);border:0}
 
 /* Logo and welcome bricks */
@@ -513,6 +511,7 @@ a.k-erow:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
 .k-badge__band{display:flex;gap:var(--space-3);align-items:flex-end;justify-content:space-between;padding:var(--space-5);background:var(--b3);color:#fff}
 .k-badge__band h2{margin:0;font-size:30px;line-height:1.05;font-weight:800;letter-spacing:-.02em}
 .k-badge__band h2 span{display:block;font-weight:400}
+.k-badge__label{margin:var(--space-3) 0 0;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
 .k-badge__band img,.k-badge__band .pd-avatar{width:56px;height:56px;border-radius:50%;object-fit:cover;flex:none;border:2px solid rgba(255,255,255,.6)}
 .k-badge__meta{padding:var(--space-4) var(--space-5);display:grid;gap:4px;font-size:14px}
 .k-badge__meta b{font-size:15px}
@@ -563,6 +562,3 @@ a.k-erow:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
 .k-who b{display:block;font-size:15px}
 .k-who p{margin:2px 0 0;color:var(--muted-foreground);font-size:14px}
 
-/* Check your email */
-.k-mail{display:grid;place-items:center;height:140px;border-radius:var(--radius-xl);background:var(--brand);color:#fff;margin-top:var(--space-6)}
-.k-mail .pd-i{width:56px;height:56px}
