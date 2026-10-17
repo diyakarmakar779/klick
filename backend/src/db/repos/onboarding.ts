@@ -1,6 +1,7 @@
-// Onboarding: identity ("Is this you?") -> integrations -> questionnaire.
+// Onboarding, once signed in: consent -> block -> LinkedIn ("Is this you?") -> profile -> goals
+// -> sharing -> who can find you -> event source -> review -> done.
 import { getDb } from "../firestore.js";
-import { COLLECTIONS, LinkedInIdentity, LinkedInProfile, Questionnaire, type Member } from "../schema.js";
+import { COLLECTIONS, LinkedInIdentity, LinkedInProfile, Questionnaire, type Member, type OnboardingStep } from "../schema.js";
 import { ConsentError } from "../../domain/consent.js";
 import type { LinkedInUserInfo } from "../../lib/linkedin.js";
 import { getMember } from "./members.js";
@@ -37,7 +38,7 @@ export async function confirmLinkedIn(memberId: string, isMe: boolean) {
   if (isMe) {
     update.linkedin = { ...m.linkedinCandidate, confirmedAt: now };
     if (!m.displayName || m.displayName === "New member") update.displayName = m.linkedinCandidate.name;
-    update.onboarding = { step: "integrations", completedAt: null };
+    update.onboarding = { step: "profile", completedAt: null };
   }
   await doc(memberId).set(update, { merge: true });
   return mustGet(memberId);
@@ -54,7 +55,6 @@ export async function setLinkedInUsername(memberId: string, username: string) {
     {
       linkedinProfile: profile,
       contact: { ...m.contact, linkedin: profile.url },
-      onboarding: { step: "integrations", completedAt: null },
       updatedAt: now,
     },
     { merge: true },
@@ -62,22 +62,21 @@ export async function setLinkedInUsername(memberId: string, username: string) {
   return mustGet(memberId);
 }
 
-export async function skipIdentity(memberId: string) {
-  await mustGet(memberId);
-  await doc(memberId).set({ onboarding: { step: "integrations", completedAt: null } }, { merge: true });
+// Moves between onboarding steps, forward or back. "done" stamps the finish time.
+export async function setOnboardingStep(memberId: string, step: OnboardingStep) {
+  const m = await mustGet(memberId);
+  const completedAt = step === "done" ? (m.onboarding.completedAt ?? new Date()) : null;
+  await doc(memberId).set({ onboarding: { step, completedAt }, updatedAt: new Date() }, { merge: true });
   return mustGet(memberId);
 }
 
-export async function finishIntegrations(memberId: string) {
-  await mustGet(memberId);
-  await doc(memberId).set({ onboarding: { step: "questionnaire", completedAt: null } }, { merge: true });
-  return mustGet(memberId);
-}
+export const skipIdentity = (memberId: string) => setOnboardingStep(memberId, "profile");
+export const finishIntegrations = (memberId: string) => setOnboardingStep(memberId, "review");
 
 export async function saveQuestionnaire(memberId: string, input: Omit<Questionnaire, "updatedAt">) {
   await mustGet(memberId);
   const now = new Date();
   const q = Questionnaire.parse({ ...input, updatedAt: now });
-  await doc(memberId).set({ questionnaire: q, onboarding: { step: "done", completedAt: now }, updatedAt: now }, { merge: true });
+  await doc(memberId).set({ questionnaire: q, onboarding: { step: "sharing", completedAt: null }, updatedAt: now }, { merge: true });
   return mustGet(memberId);
 }
