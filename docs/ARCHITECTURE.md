@@ -100,7 +100,7 @@ flowchart LR
 | # | Step | API | Gemini |
 |---|---|---|---|
 | 1 | Google sign-in, profile, choose public fields | `PUT /v1/me` | — |
-| 2 | LinkedIn → "Is this you?" | `GET /v1/onboarding/linkedin/start`, `POST …/callback`, `POST …/confirm` | — |
+| 2 | LinkedIn username (email already verified by Google sign-in) | `PUT /v1/onboarding/linkedin/username`; optional sign-in: `GET …/start`, `POST …/callback`, `POST …/confirm` | — |
 | 3 | Connect Google Calendar and Luma | `POST /v1/sources/google_calendar/sync`, `GET /v1/sources/luma_mcp/start` → Luma sign-in → `POST /v1/sources/luma_mcp/callback`, `POST /v1/onboarding/integrations/done` | — |
 | 4 | Questionnaire + "Why are you attending?" | `PUT /v1/onboarding/questionnaire`, `PUT /v1/events/:id/goal`, `PUT /v1/events/:id/visibility` | — |
 | 5 | Event page: details, how many hey-os members are going, which of my connections are going | `GET /v1/events/:id` | — |
@@ -148,7 +148,7 @@ erDiagram
 
 | Collection | Doc id | Key fields | Invariants |
 |---|---|---|---|
-| `members` | Firebase uid | displayName, headline, role, company, interests, languages, accessibility, `defaultVisibility`, `contact{email,phone,linkedin,website,x}` (private), `connectionPreference` (review/auto_accept), `linkedin`, `linkedinCandidate`, `questionnaire`, `onboarding.step`, `embedding?` | `contact` never leaves the API except through an accepted connection's shared fields |
+| `members` | Firebase uid | displayName, headline, role, company, interests, languages, accessibility, `defaultVisibility`, `contact{email,phone,linkedin,website,x}` (private), `connectionPreference` (review/auto_accept), `linkedin`, `linkedinCandidate`, `linkedinProfile` (username the member typed, self-reported), `questionnaire`, `onboarding.step`, `embedding?` | `contact` never leaves the API except through an accepted connection's shared fields |
 | `sourceConnections` | `{uid}__{provider}` | provider, scopes, `tokenRef` (pointer, never a token), syncState, lastSyncAt, consentedAt | Deleting it deletes the memberships it created |
 | `events` | auto | title, description, startsAt, endsAt, timezone, venue, url, category, tags, coverImageUrl, organizerName, `providerGuestCount`, `canonicalKey`, `sourceRefs[]` | One record per real event. Identity is the provider's id (Calendar `iCalUID`, Luma event id) or a shared Luma link, never title similarity. Luma's details win over Calendar's |
 | `eventSourceRefs` | `{provider}__{externalId}` or `key__luma_{slug}` | eventId | Dedupes the same event across members and across sources (a Calendar invite with a lu.ma link joins the Luma event) |

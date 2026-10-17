@@ -1,6 +1,6 @@
 // Onboarding: identity ("Is this you?") -> integrations -> questionnaire.
 import { getDb } from "../firestore.js";
-import { COLLECTIONS, LinkedInIdentity, Questionnaire, type Member } from "../schema.js";
+import { COLLECTIONS, LinkedInIdentity, LinkedInProfile, Questionnaire, type Member } from "../schema.js";
 import { ConsentError } from "../../domain/consent.js";
 import type { LinkedInUserInfo } from "../../lib/linkedin.js";
 import { getMember } from "./members.js";
@@ -40,6 +40,25 @@ export async function confirmLinkedIn(memberId: string, isMe: boolean) {
     update.onboarding = { step: "integrations", completedAt: null };
   }
   await doc(memberId).set(update, { merge: true });
+  return mustGet(memberId);
+}
+
+// Step 1: the member types their LinkedIn username. Their email is already verified by Google sign-in.
+// The link is kept as a private contact detail, shared only when they choose to on a Klick.
+export async function setLinkedInUsername(memberId: string, username: string) {
+  const m = await mustGet(memberId);
+  const now = new Date();
+  const slug = username.toLowerCase();
+  const profile = LinkedInProfile.parse({ username: slug, url: `https://www.linkedin.com/in/${slug}`, source: "self_reported", addedAt: now });
+  await doc(memberId).set(
+    {
+      linkedinProfile: profile,
+      contact: { ...m.contact, linkedin: profile.url },
+      onboarding: { step: "integrations", completedAt: null },
+      updatedAt: now,
+    },
+    { merge: true },
+  );
   return mustGet(memberId);
 }
 
