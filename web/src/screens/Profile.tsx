@@ -41,13 +41,20 @@ import { useMyQr } from "../lib/myQr";
 
 const errorText = (e: unknown) => (e instanceof ApiError ? `${e.message}. Try again.` : e instanceof Error ? e.message : String(e));
 
-function Stat({ icon, value, label }: { icon: ReactNode; value: number | null; label: string }) {
-  return (
-    <div className="k-stat">
+function Stat({ icon, value, label, to }: { icon: ReactNode; value: number | null; label: string; to?: string }) {
+  const body = (
+    <>
       <span className="k-stat__icon">{icon}</span>
       <b>{value ?? "–"}</b>
       <span>{label}</span>
-    </div>
+    </>
+  );
+  return to ? (
+    <Link to={to} className="k-stat k-stat--link">
+      {body}
+    </Link>
+  ) : (
+    <div className="k-stat">{body}</div>
   );
 }
 
@@ -397,7 +404,7 @@ export default function Profile() {
         <div className="k-prof__cards">
           <div className="k-stats">
             <Stat icon={<CalendarDays className="pd-i" />} value={eventCount} label="Events" />
-            <Stat icon={<Users className="pd-i" />} value={klicks.data?.length ?? null} label="Klicks" />
+            <Stat icon={<Users className="pd-i" />} value={klicks.data?.length ?? null} label="Klicks" to="/klicks" />
             <Stat icon={<NotebookPen className="pd-i" />} value={memories.data?.length ?? null} label="Memories" />
           </div>
 
