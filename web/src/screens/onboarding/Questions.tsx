@@ -38,7 +38,7 @@ const TOPICS = [
   "Community",
 ];
 
-// Step 5, last: what you're after and what you can give. Gemini uses only this, in your own words, to explain matches.
+// Step 6, last: what you're after and what you can give. Gemini uses only this, in your own words, to explain matches.
 export default function Questions({ me }: { me: Me }) {
   const { setMe } = useMe();
   const { go } = useGo();
@@ -95,7 +95,7 @@ export default function Questions({ me }: { me: Me }) {
   const none = lookingFor.length + offering.length === 0;
   return (
     <Flow
-      step={5}
+      step={6}
       onBack={() => go("integrations")}
       title="Who do you want to meet?"
       sub="Klick uses your answers to suggest people and to explain why, in plain words. Matches see your role and company before a Klick, nothing else."

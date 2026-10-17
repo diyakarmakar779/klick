@@ -395,9 +395,10 @@ describe("QR exchange and field-level sharing", () => {
 
 
 describe("onboarding", () => {
-  it("verified email -> consent -> LinkedIn -> sources -> who you want to meet -> done", async () => {
+  it("verified email -> consent -> block -> LinkedIn -> sources -> who you want to meet -> done", async () => {
     expect((await call("diya", "PUT", "/v1/me", {})).body.onboarding.step).toBe("account");
     expect((await call("diya", "PUT", "/v1/onboarding/step", { step: "consent" })).body.onboarding.step).toBe("consent");
+    expect((await call("diya", "PUT", "/v1/onboarding/step", { step: "block" })).body.onboarding.step).toBe("block");
     expect((await call("diya", "PUT", "/v1/onboarding/step", { step: "identity" })).body.onboarding.step).toBe("identity");
     const cand = await setLinkedInCandidate("diya", { sub: "li-123", name: "Diya S", email: "diya@execora.in", email_verified: true }, "diya@execora.in");
     expect(cand.emailMatchesAccount).toBe(true);

@@ -91,7 +91,7 @@ export const SharingDefaults = z.object({
 });
 export type SharingDefaults = z.infer<typeof SharingDefaults>;
 
-export const ONBOARDING_STEPS = ["account", "consent", "identity", "integrations", "questionnaire", "done"] as const;
+export const ONBOARDING_STEPS = ["account", "consent", "block", "identity", "integrations", "questionnaire", "done"] as const;
 export const OnboardingStep = z.enum(ONBOARDING_STEPS);
 export type OnboardingStep = z.infer<typeof OnboardingStep>;
 

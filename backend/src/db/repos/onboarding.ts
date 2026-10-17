@@ -1,4 +1,4 @@
-// Onboarding, once signed in with Google: verified email -> consent -> LinkedIn -> event sources
+// Onboarding, once signed in with Google: verified email -> consent -> block -> LinkedIn -> event sources
 // -> who you want to meet -> done.
 import { getDb } from "../firestore.js";
 import { COLLECTIONS, LinkedInIdentity, LinkedInProfile, Questionnaire, type Member, type OnboardingStep } from "../schema.js";

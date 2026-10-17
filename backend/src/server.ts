@@ -115,7 +115,7 @@ export function buildServer() {
         return m ? publicProfile(m) : reply.code(404).send({ error: "Not found" });
       });
 
-      // ---- Onboarding: verified email -> consent -> LinkedIn -> sources -> who you want to meet
+      // ---- Onboarding: verified email -> consent -> block -> LinkedIn -> sources -> who you want to meet
       api.put("/onboarding/step", async (req) => {
         const { step } = z.object({ step: OnboardingStep }).parse(req.body);
         return ownProfile(await setOnboardingStep(req.memberId, step));

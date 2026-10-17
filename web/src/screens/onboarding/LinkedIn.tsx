@@ -14,7 +14,7 @@ function linkedinUsername(input: string): string {
 }
 const VALID = /^[A-Za-z0-9-]{3,100}$/;
 
-// Step 3: their Klick badge, and the LinkedIn link it carries. The link is self-reported and kept
+// Step 4: their Klick badge, and the LinkedIn link it carries. The link is self-reported and kept
 // as a private contact detail; Klick never looks anyone up on LinkedIn.
 export default function LinkedIn({ me }: { me: Me }) {
   const { go, busy, error, setError } = useGo();
@@ -31,8 +31,8 @@ export default function LinkedIn({ me }: { me: Me }) {
 
   return (
     <Flow
-      step={3}
-      onBack={() => go("consent")}
+      step={4}
+      onBack={() => go("block")}
       title="Add your LinkedIn"
       sub="It goes on your Klick badge. People see it only if you share it after you both accept."
       foot={

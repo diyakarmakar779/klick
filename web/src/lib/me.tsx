@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { Api, ApiError, type Me, type OnboardingStep } from "./api";
 
-const STEPS: OnboardingStep[] = ["account", "consent", "identity", "integrations", "questionnaire"];
+const STEPS: OnboardingStep[] = ["account", "consent", "block", "identity", "integrations", "questionnaire"];
 import { auth } from "./firebase";
 
 interface MeState {

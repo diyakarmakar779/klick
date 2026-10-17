@@ -21,7 +21,7 @@ export default function Consent() {
       foot={
         <>
           <FlowError>{error}</FlowError>
-          <Button variant="primary" size="lg" loading={busy} onClick={() => go("identity")}>
+          <Button variant="primary" size="lg" loading={busy} onClick={() => go("block")}>
             I understand, continue
           </Button>
           <a className="k-onb__link" href="/privacy.html">
