@@ -38,11 +38,16 @@ export default function Flow({
             </span>
           )}
         </header>
-        {step && (
+        {/* Screens without a step keep the bars' space, so titles line up across the flow. */}
+        {step ? (
           <div className="k-onb__bars" role="progressbar" aria-valuemin={1} aria-valuemax={TOTAL} aria-valuenow={step}>
             {Array.from({ length: TOTAL }, (_, i) => (
               <span key={i} className={i < step ? "on" : ""} />
             ))}
+          </div>
+        ) : (
+          <div className="k-onb__bars" aria-hidden="true" style={{ visibility: "hidden" }}>
+            <span />
           </div>
         )}
         <h1 className="k-onb__title">{title}</h1>

@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { signInWithPopup } from "firebase/auth";
-import { UserRound } from "lucide-react";
+import { CalendarDays, Lock, Send, UserRound } from "lucide-react";
 import { auth, googleProvider } from "../../lib/firebase";
-import { FlatBrick } from "../../ui/Brick";
+import Brick, { FlatBrick } from "../../ui/Brick";
 import Button from "../../ui/Button";
 import Flow, { FlowError } from "../onboarding/Flow";
 
@@ -81,6 +81,11 @@ export default function Entry() {
       sub={signup ? "Use your Google account. You review what's shared before anyone sees anything." : "Sign in with the Google account you used before."}
       foot={
         <>
+          <FlowError>{error}</FlowError>
+          <Button variant="primary" size="lg" loading={busy} onClick={google}>
+            <UserRound className="pd-i" aria-hidden="true" />
+            Continue with Google
+          </Button>
           {signup && (
             <p className="k-caption k-center">
               By continuing you agree to the <a href="/privacy.html">Terms and Privacy policy</a>.
@@ -95,13 +100,22 @@ export default function Entry() {
         </>
       }
     >
-      <div className="k-onb__body">
-        <Button variant="primary" size="lg" loading={busy} onClick={google}>
-          <UserRound className="pd-i" aria-hidden="true" />
-          Continue with Google
-        </Button>
-        <FlowError>{error}</FlowError>
-        <p className="k-caption k-center">Klick only reads events you're part of, and nobody sees you until you choose.</p>
+      <div className="k-entry__art">
+        <Brick color={signup ? "blue" : "green"} studs={signup ? 4 : 6} unit={44} />
+        <ul className="k-entry__points">
+          <li>
+            <Lock className="pd-i" aria-hidden="true" />
+            Nobody sees you until you choose
+          </li>
+          <li>
+            <CalendarDays className="pd-i" aria-hidden="true" />
+            Only events you're part of
+          </li>
+          <li>
+            <Send className="pd-i" aria-hidden="true" />
+            Nothing is sent for you
+          </li>
+        </ul>
       </div>
     </Flow>
   );

@@ -563,3 +563,7 @@ a.k-erow:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
 .k-who b{display:block;font-size:15px}
 .k-who p{margin:2px 0 0;color:var(--muted-foreground);font-size:14px}
 
+.k-entry__art{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:var(--space-8);padding:var(--space-8) 0}
+.k-entry__points{list-style:none;margin:0;padding:0;display:grid;gap:var(--space-3);font-size:15px;font-weight:500}
+.k-entry__points li{display:flex;align-items:center;gap:var(--space-3)}
+.k-entry__points .pd-i{color:var(--privacy);width:18px;height:18px}
