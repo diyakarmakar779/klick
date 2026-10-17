@@ -128,6 +128,8 @@ export const Member = z.object({
     })
     .default({}),
   defaultVisibility: Visibility.default("hidden"),
+  // Onboarding's "Who can find you at events?": ask per event and never both keep the default hidden.
+  discoverability: z.enum(["ask", "events", "never"]).default("ask"),
   contact: z.record(ContactField, z.string().max(200)).default({}),
   // "review": every request waits for approval. "auto_accept": showing your QR is your consent.
   connectionPreference: z.enum(["review", "auto_accept"]).default("review"),

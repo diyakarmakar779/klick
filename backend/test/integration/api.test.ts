@@ -428,6 +428,7 @@ describe("onboarding", () => {
     const me = (await call("diya", "PUT", "/v1/me", { block: { color: "green", studs: 6 }, location: "Pune, India (IST)" })).body;
     expect(me.block).toEqual({ color: "green", studs: 6 });
     expect(me.sharing.beforeKlick).toEqual(["photo", "role_company"]);
+    expect(me.discoverability).toBe("ask");
     expect((await call("diya", "PUT", "/v1/me", { block: { color: "gold", studs: 6 } })).status).toBe(400);
     expect((await call("diya", "PUT", "/v1/me", { sharing: { beforeKlick: ["email"], afterAccept: [] } })).status).toBe(400);
     const saved = (await call("diya", "PUT", "/v1/me", { sharing: { beforeKlick: ["location"], afterAccept: ["role_company", "email"] } })).body;

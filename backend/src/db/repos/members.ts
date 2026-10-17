@@ -15,6 +15,7 @@ export const MemberInput = Member.pick({
   languages: true,
   accessibility: true,
   defaultVisibility: true,
+  discoverability: true,
   contact: true,
   connectionPreference: true,
 }).partial();
