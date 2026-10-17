@@ -2,8 +2,6 @@
 
 Klick helps people meet the right people at events they're already going to, remember who they met, and follow up afterwards. Built for the AI Builder Cup 2026 (Theme 6, Sustainability & Social Impact).
 
-This is the single reference for what Klick does, how it fits together and the rules it keeps. The repository and Google Cloud project keep their original names (`hey-os`, `hey-os-511517`), so those appear in URLs and config.
-
 ---
 
 ## 1. What Klick does, and what it leaves out
