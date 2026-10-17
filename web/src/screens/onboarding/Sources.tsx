@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
-import { CalendarDays, Check, Sparkles, Ticket } from "lucide-react";
+import { CalendarDays, Check, ChevronRight, Info, Sparkles, Ticket } from "lucide-react";
 import { Api, ApiError } from "../../lib/api";
 import { useMe } from "../../lib/me";
 import { connectCalendar, startRedirect } from "../../lib/sources";
 import Button from "../../ui/Button";
-import Steps from "./Steps";
+import Flow, { FlowError, useGo } from "./Flow";
 
 type Busy = "calendar" | "luma" | "demo" | "next" | null;
 
-// Step 2: connect where your events live. Klick reads only events you're part of, never guest lists.
+// Step 6, last: connect where your events live. Klick reads only events you're part of, never guest lists.
 export default function Sources() {
   const { setMe } = useMe();
+  const { go } = useGo();
   const [connected, setConnected] = useState<Record<string, boolean>>({});
   const [busy, setBusy] = useState<Busy>(null);
   const [note, setNote] = useState("");
@@ -51,53 +52,64 @@ export default function Sources() {
   const next = () => run("next", async () => setMe(await Api.finishIntegrations()));
   const any = Object.keys(connected).length > 0;
 
-  const row = (key: string, icon: React.ReactNode, title: string, body: string, action: () => void, which: Busy) => (
-    <div className="k-source">
-      <span className="k-source__icon">{icon}</span>
-      <div className="k-source__body">
-        <b>{title}</b>
-        <small>{body}</small>
-      </div>
+  const row = (key: string, Icon: typeof CalendarDays, title: string, body: string, action: () => void, which: Busy) => (
+    <button type="button" className="k-srcrow" disabled={connected[key] || !!busy} onClick={action}>
+      <span className="k-source__icon">
+        <Icon className="pd-i" aria-hidden="true" />
+      </span>
+      <span className="k-grow">
+        {title}
+        <small>{busy === which ? "Connecting…" : body}</small>
+      </span>
       {connected[key] ? (
         <span className="pd-badge pd-badge--success">
           <Check className="pd-i" aria-hidden="true" />
           Connected
         </span>
       ) : (
-        <Button variant="outline" size="sm" loading={busy === which} onClick={action}>
-          Connect
-        </Button>
+        <ChevronRight className="pd-i" aria-hidden="true" />
       )}
-    </div>
+    </button>
   );
 
   return (
-    <div className="k-flow">
-      <div className="pd-page pd-page--narrow">
-        <Steps step={2} />
-        <h1 className="title">Where do your events live?</h1>
-        <p className="k-muted" style={{ marginTop: "var(--space-3)", marginBottom: "var(--space-6)" }}>
-          Klick reads only the events you're part of. It never reads guest lists or contacts anyone for you.
-        </p>
-        {row("google_calendar", <CalendarDays className="pd-i" />, "Google Calendar", "Read-only. Flights and reminders are skipped.", calendar, "calendar")}
-        {row("luma_mcp", <Ticket className="pd-i" />, "Luma", "Events you're hosting or registered for.", luma, "luma")}
-        {row("mock_luma", <Sparkles className="pd-i" />, "Demo events", "Try Klick with sample events and people.", demo, "demo")}
+    <Flow
+      step={6}
+      onBack={() => go("discoverability")}
+      title="Connect an event source"
+      sub="Klick finds your events from a source you authorise. Start with one, add more later."
+      foot={
+        <>
+          <FlowError>{error}</FlowError>
+          {any ? (
+            <Button variant="primary" size="lg" loading={busy === "next"} disabled={!!busy} onClick={next}>
+              Continue
+            </Button>
+          ) : (
+            <>
+              <button type="button" className="k-onb__link" disabled={!!busy} onClick={next}>
+                Skip for now
+              </button>
+              <p className="k-caption k-center">Without a source you can still connect with people using your QR code.</p>
+            </>
+          )}
+        </>
+      }
+    >
+      <div className="k-onb__body">
+        {row("google_calendar", CalendarDays, "Google Calendar", "Read-only. Flights and reminders are skipped.", calendar, "calendar")}
+        {row("luma_mcp", Ticket, "Luma", "Events you're hosting or registered for.", luma, "luma")}
+        {row("mock_luma", Sparkles, "Demo events", "Try Klick with sample events and people.", demo, "demo")}
         {note && (
-          <p className="k-caption" role="status" style={{ marginTop: "var(--space-4)" }}>
+          <p className="k-caption" role="status">
             {note}
           </p>
         )}
-        <div className="k-flow__foot">
-          {error && (
-            <p className="pd-error" role="alert">
-              {error}
-            </p>
-          )}
-          <Button variant="primary" size="lg" loading={busy === "next"} onClick={next}>
-            {any ? "Continue" : "Skip for now"}
-          </Button>
-        </div>
+        <p className="k-note">
+          <Info className="pd-i" aria-hidden="true" />
+          <span>Klick reads event titles, dates and whether you're hosting, invited or planning to attend. It never changes your calendar or reads guest lists.</span>
+        </p>
       </div>
-    </div>
+    </Flow>
   );
 }
