@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One-time Google Cloud setup for Connected Event Networking.
+# One-time Google Cloud setup for Klick (service names keep their original event-networking prefix).
 # Run on your laptop with the gcloud CLI logged in:  gcloud auth login && gcloud auth application-default login
 # Usage: PROJECT_ID=my-project-id ./gcp-setup.sh
 # Safe to re-run: each step skips what already exists.

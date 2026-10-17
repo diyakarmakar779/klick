@@ -42,7 +42,7 @@ export function mockLumaEvents(memberId: string, now = new Date()): ImportedEven
       state: h % 2 === 0 ? "attended" : "registered",
       stateRef: h % 2 === 0 ? `checkin:${memberId}` : undefined,
     },
-    // Only demo members are going, so a judge finds it through Discover (where their Klicks are going).
+    // Only demo members are going, so someone trying the demo finds it through Discover (where their Klicks are going).
     ...(memberId.startsWith("demo-")
       ? [
           {

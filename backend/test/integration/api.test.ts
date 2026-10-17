@@ -449,16 +449,16 @@ describe("onboarding", () => {
 
   it("LinkedIn sign-in uses a server-made, one-use state and an allowed return address", async () => {
     await call("diya", "PUT", "/v1/me", {});
-    process.env.WEB_URL = "https://hey-os.web.app";
+    process.env.WEB_URL = "https://klick.example";
     delete process.env.LINKEDIN_CLIENT_ID;
-    const cb = encodeURIComponent("https://hey-os.web.app/connect/linkedin/callback");
+    const cb = encodeURIComponent("https://klick.example/connect/linkedin/callback");
     expect((await call("diya", "GET", `/v1/onboarding/linkedin/start?redirectUri=${cb}`)).status).toBe(503);
     process.env.LINKEDIN_CLIENT_ID = "li-client";
     const bad = encodeURIComponent("https://evil.example/cb");
     expect((await call("diya", "GET", `/v1/onboarding/linkedin/start?redirectUri=${bad}`)).status).toBe(400);
     const start = (await call("diya", "GET", `/v1/onboarding/linkedin/start?redirectUri=${cb}`)).body;
     expect(new URL(start.url).searchParams.get("state")).toBe(start.state);
-    expect(new URL(start.url).searchParams.get("redirect_uri")).toBe("https://hey-os.web.app/connect/linkedin/callback");
+    expect(new URL(start.url).searchParams.get("redirect_uri")).toBe("https://klick.example/connect/linkedin/callback");
     // Someone else can't finish Diya's sign-in, and a made-up state is refused.
     await call("eve", "PUT", "/v1/me", {});
     expect((await call("eve", "POST", "/v1/onboarding/linkedin/callback", { code: "c", state: start.state })).status).toBe(400);
@@ -639,25 +639,25 @@ describe("demo data", () => {
   it("Demo events gives a member Klicks going, a request, a private note, messages and a Discover event", async () => {
     process.env.DEMO_DATA = "1";
     try {
-      await call("judge", "PUT", "/v1/me", { displayName: "Judge" });
-      expect((await call("judge", "POST", "/v1/sources/mock_luma/connect")).body.imported).toBe(2);
-      await call("judge", "POST", "/v1/sources/mock_luma/connect"); // twice is harmless
-      const klicks = (await call("judge", "GET", "/v1/connections?status=accepted")).body;
+      await call("visitor", "PUT", "/v1/me", { displayName: "Visitor" });
+      expect((await call("visitor", "POST", "/v1/sources/mock_luma/connect")).body.imported).toBe(2);
+      await call("visitor", "POST", "/v1/sources/mock_luma/connect"); // twice is harmless
+      const klicks = (await call("visitor", "GET", "/v1/connections?status=accepted")).body;
       expect(klicks.map((k: { other: { id: string } }) => k.other.id).sort()).toEqual(["demo-meera", "demo-ravi", "demo-sana"]);
-      expect((await call("judge", "GET", "/v1/connections?status=pending")).body).toHaveLength(1);
-      const chats = (await call("judge", "GET", "/v1/chats")).body;
+      expect((await call("visitor", "GET", "/v1/connections?status=pending")).body).toHaveLength(1);
+      const chats = (await call("visitor", "GET", "/v1/chats")).body;
       expect(chats.map((c: { title: string; unread: number }) => [c.title, c.unread])).toEqual(expect.arrayContaining([["Meera Iyer", 2], ["Ravi Patil", 1]]));
-      expect((await call("judge", "GET", "/v1/memories")).body).toHaveLength(1);
-      expect((await call("judge", "GET", "/v1/followups")).body).toHaveLength(1);
-      const discover = (await call("judge", "GET", "/v1/discover")).body;
+      expect((await call("visitor", "GET", "/v1/memories")).body).toHaveLength(1);
+      expect((await call("visitor", "GET", "/v1/followups")).body).toHaveLength(1);
+      const discover = (await call("visitor", "GET", "/v1/discover")).body;
       expect(discover.map((d: { event: { title: string } }) => d.event.title)).toContain("Women in Cloud Pune: Build with Gemini");
-      const devfest = (await call("judge", "GET", "/v1/events")).body.find((e: { event: { title: string } }) => e.event.title.startsWith("DevFest"));
-      const page = (await call("judge", "GET", `/v1/events/${devfest.event.id}`)).body;
+      const devfest = (await call("visitor", "GET", "/v1/events")).body.find((e: { event: { title: string } }) => e.event.title.startsWith("DevFest"));
+      const page = (await call("visitor", "GET", `/v1/events/${devfest.event.id}`)).body;
       expect(page.catchUp.map((c: { profile: { id: string } }) => c.profile.id).sort()).toEqual(["demo-meera", "demo-ravi", "demo-sana"]);
-      expect(page.effectiveVisibility).toBe("hidden"); // the judge's own choice stays theirs
+      expect(page.effectiveVisibility).toBe("hidden"); // the visitor's own choice stays theirs
       // The hidden sample member never shows up anywhere.
-      await call("judge", "PUT", `/v1/events/${devfest.event.id}/visibility`, { visibility: "confirmed_attendees" });
-      const after = (await call("judge", "GET", `/v1/events/${devfest.event.id}`)).body;
+      await call("visitor", "PUT", `/v1/events/${devfest.event.id}/visibility`, { visibility: "confirmed_attendees" });
+      const after = (await call("visitor", "GET", `/v1/events/${devfest.event.id}`)).body;
       expect(after.alsoGoing.map((p: { id: string }) => p.id)).not.toContain("demo-dev");
       expect(after.alsoGoing.length).toBeGreaterThan(5);
     } finally {

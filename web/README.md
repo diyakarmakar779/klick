@@ -1,54 +1,32 @@
-# React + TypeScript + Vite
+# Klick web app
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 19 + TypeScript + Vite, deployed to Firebase Hosting. Mobile-first, light theme, built from the Prod :D design system in [`../design/prod-design-system`](../design/prod-design-system).
 
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+```bash
+cp .env.example .env.local   # Firebase web config and API URL
+npm install
+npm run dev                  # http://localhost:5173
+npm run lint && npm run build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Deploy from the repo root after a build: `npx -y firebase-tools deploy --only hosting`.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Layout
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
 ```
+src/App.tsx            Routes
+src/layout/            App shell, bottom nav and sidebar, page header
+src/ui/                Design system components (Button, Sheet, Alert, ShareSheet, ...)
+src/screens/entry/     Welcome and sign-in
+src/screens/onboarding/ Six onboarding steps
+src/screens/events/    Your events, Discover, event page, people worth meeting
+src/screens/klicks/    Your Klicks and each person's page (memories, follow-ups, contact)
+src/screens/chat/      Chats list, Klick AI chat about an event, direct messages
+src/screens/qr/        Scan a code and the QR landing page
+src/screens/Profile.tsx Profile, your QR, settings
+src/lib/               API client, auth, formatting helpers
+src/styles/app.css     App styles on top of the design system
+public/privacy.html    Privacy page
+```
+
+Add `?preview` to a URL in dev to see screens with a mocked member and no sign-in.
