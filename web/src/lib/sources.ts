@@ -6,7 +6,11 @@ const RETURN_KEY = "klick.returnTo";
 
 // Google Calendar: a one-time read-only token from a Google popup, sent once and never stored.
 export async function connectCalendar(): Promise<{ imported: number; removed: number }> {
-  const res = await signInWithPopup(auth, googleProvider(true));
+  const res = await signInWithPopup(auth, googleProvider(true)).catch((e: { code?: string }) => {
+    if (e?.code === "auth/popup-blocked") throw new Error("Your browser blocked Google's window. Allow pop-ups for this site, then tap Connect again.");
+    if (e?.code === "auth/popup-closed-by-user" || e?.code === "auth/cancelled-popup-request") throw new Error("Google's window was closed before Calendar was connected.");
+    throw e;
+  });
   const token = GoogleAuthProvider.credentialFromResult(res)?.accessToken;
   if (!token) throw new Error("Calendar access wasn't granted. Tick the calendar box on Google's screen to continue.");
   return Api.syncCalendar(token);

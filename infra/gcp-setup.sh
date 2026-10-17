@@ -71,12 +71,19 @@ if [[ -n "${LINKEDIN_CLIENT_ID:-}" && -n "${LINKEDIN_CLIENT_SECRET:-}" ]]; then
 fi
 
 echo "==> Firebase (Auth) on the same project"
-if ! npx -y firebase-tools projects:list 2>/dev/null | grep -q "$PROJECT_ID"; then
+# Ask the Firebase API directly with the gcloud login: firebase-tools may not be logged in (e.g. in Cloud Shell),
+# which made the old projects:list check miss an existing Firebase project and try to add it again.
+FIREBASE_STATUS="$(curl -s -o /dev/null -w '%{http_code}' \
+  -H "Authorization: Bearer $(gcloud auth print-access-token)" -H "x-goog-user-project: $PROJECT_ID" \
+  "https://firebase.googleapis.com/v1beta1/projects/$PROJECT_ID")"
+if [[ "$FIREBASE_STATUS" == "200" ]]; then
+  echo "   Firebase is already on this project, skipping."
+else
   npx -y firebase-tools projects:addfirebase "$PROJECT_ID" || echo "!! Add Firebase manually at https://console.firebase.google.com"
+  echo "   Then enable Google sign-in: Firebase console > Authentication > Sign-in method > Google."
+  echo "   OAuth consent screen: add scope calendar.events.readonly and both demo Google accounts as test users:"
+  echo "   https://console.cloud.google.com/auth/audience?project=$PROJECT_ID"
 fi
-echo "   Then enable Google sign-in: Firebase console > Authentication > Sign-in method > Google."
-echo "   OAuth consent screen: add scope calendar.events.readonly and both demo Google accounts as test users:"
-echo "   https://console.cloud.google.com/auth/audience?project=$PROJECT_ID"
 
 echo "==> Firestore rules and indexes"
 ( cd "$(dirname "$0")/../backend" && npx -y firebase-tools deploy --only firestore --project "$PROJECT_ID" )
