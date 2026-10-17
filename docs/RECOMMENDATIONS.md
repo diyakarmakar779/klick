@@ -1,6 +1,6 @@
 # Recommendations and sharing: what we borrow from X's ranking
 
-How Klick decides which people and events to suggest, and how it grows by people sharing it, using ideas from X's (Twitter's) ranking system. Written 13 Oct 2026.
+How Klick decides which people and events to suggest, and how it grows by people sharing it, using ideas from X's (Twitter's) ranking system. Written 13 Oct 2026, updated 17 Oct 2026 to match the code.
 
 **Source note.** The numbers below come from the code X open-sourced in March 2023 (`twitter/the-algorithm` and `the-algorithm-ml`). X has said its ranking has changed since, so treat this as a pattern to learn from, not a description of X today.
 
@@ -33,8 +33,8 @@ Klick ranks **people to meet at an event you're attending**, **follow-ups worth 
 | X stage | Klick today | Next step |
 |---|---|---|
 | Candidate sourcing | Only members confirmed for the same event who chose to be visible (R2), reciprocal | Add "out-of-network": people your accepted connections met at earlier events, if both sides allow it |
-| Light ranker | `overlapRank`: shared interests, topics, "looking for" vs "offering" | Add questionnaire embeddings (Vertex AI text embeddings, already indexed on `members.embedding`) |
-| Heavy ranker | Gemini ranks the top 20 and explains each with quoted evidence | Feed outcome signals back in (table below) |
+| Light ranker | `overlapRank`: shared interests, topics, "looking for" vs "offering" | Add questionnaire embeddings (Vertex AI text embeddings; the vector index on `members.embedding` exists, nothing generates embeddings yet) |
+| Heavy ranker | Gemini picks up to 5 of the top 20 and explains each with quoted evidence | Feed outcome signals back in (table below) |
 | Filters | Drops blocked, pending and already accepted people; drops invented ids | Diversity: don't show five people from the same company; cap per session |
 
 **Outcome signals we can learn from, weighted the X way** (none of these need data about anyone outside Klick):
@@ -51,15 +51,20 @@ Klick ranks **people to meet at an event you're attending**, **follow-ups worth 
 
 At demo scale we'd use these to re-weight the light ranker (and include them in Gemini's prompt as context), not to train a model.
 
-### Event recommendations (not built yet)
+### Event recommendations (partly built)
 
-Only events that are **public on their provider** can be suggested, and the reason shown is about the event or your own connections, never about strangers:
+**Built: Discover** (`GET /v1/discover`). It lists upcoming events you aren't part of yet that at least one of your accepted Klicks is going to (and doesn't hide from Klicks), sorted by date. Each shows:
 
-- "3 of your connections are going" (only accepted connections who didn't hide themselves).
+- Which of your Klicks are going, by name, since you already know them.
+- How many other members going are worth meeting, as a count floored at "fewer than 3".
+- Save, and "Plan to attend" (`POST /v1/events/:id/plan`).
+
+**Not built: ranking and reach.** No score orders the list, and events no Klick is going to never appear. The plan:
+
 - "Matches your topics: Climate, AI" (from the event's tags and your questionnaire).
 - "42 Klick members going" (counts only, floored at "fewer than 3").
-
-Score idea: `0.4 × topic match + 0.3 × connections going + 0.2 × how many Klick members going (log scale) + 0.1 × freshness`, minus a penalty for categories you dismissed.
+- Score idea: `0.4 × topic match + 0.3 × Klicks going + 0.2 × how many Klick members going (log scale) + 0.1 × freshness`, minus a penalty for categories you dismissed.
+- Suggest only events that are public on their provider once events beyond your Klicks' are included.
 
 ## 3. Sharing and growth (virality)
 
@@ -87,13 +92,15 @@ What we show instead:
 | Instead of | We show |
 |---|---|
 | A list of everyone going | "N Klick members going" (counts only; "fewer than 3" for tiny numbers so no one is singled out) |
-| "B and C are not on Klick" | Luma's own public "N going" when the provider shows it (`providerGuestCount`), side by side with the Klick number |
-| Names of people going | Your own accepted connections who are going, and match suggestions among people who opted in |
+| "B and C are not on Klick" | Luma's own public "N going" (`providerGuestCount`), side by side with the Klick number. Stored on import, not shown in the app yet |
+| Names of people going | Your own Klicks who are going, and, if you're findable too, people who chose to be found |
 | Contacting B and C for you | An invite link you send yourself |
 
-## 5. What's built today (PR #1)
+## 5. What's built today
 
 - One event record per real event. A second member importing the same Luma or Calendar event joins the existing record, and a Calendar invite containing a lu.ma link joins the Luma event.
-- Luma-style details: category, tags, organizer, cover image, provider guest count.
-- `GET /v1/events/:id`: the event, how many Klick members are going, how many are discoverable, and which of your connections are going.
-- Not built yet: event recommendations, share cards, invite codes and the signal weights above.
+- Luma-style details: category, tags, organizer, cover image, provider guest count (stored).
+- People matches: `overlapRank`, then Gemini with quoted evidence, with the deterministic ranking as a fallback.
+- `GET /v1/events/:id`: the event, member counts (floored), your Klicks going, people you met here, and people worth meeting if you're findable.
+- Discover, as above.
+- Not built yet: ranked event recommendations, share cards, invite codes and the signal weights above.
