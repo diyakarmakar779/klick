@@ -3,14 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { Api, ApiError, type LinkedInCandidate } from "../lib/api";
 import { useMe } from "../lib/me";
 import { takeReturnTo } from "../lib/sources";
-import { Link2 } from "lucide-react";
 import Button from "../ui/Button";
-import Flow, { FlowError } from "./onboarding/Flow";
 
 // Where LinkedIn and Luma send the member back. Finishes the sign-in once, then returns to where they started.
 export default function Callback({ provider }: { provider: "linkedin" | "luma" }) {
   const navigate = useNavigate();
-  const { me, setMe, refresh } = useMe();
+  const { setMe, refresh } = useMe();
   const [candidate, setCandidate] = useState<LinkedInCandidate | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -51,56 +49,6 @@ export default function Callback({ provider }: { provider: "linkedin" | "luma" }
     }
   }
 
-  // "Is this you?" as the design's badge: what LinkedIn returned, nothing applied until they say yes.
-  if (candidate) {
-    const [first, ...rest] = candidate.name.split(" ");
-    const onboarding = me?.onboarding.step !== "done";
-    return (
-      <Flow
-        step={onboarding ? 4 : undefined}
-        onBack={() => answer(false)}
-        title="Is this you?"
-        sub="This is the LinkedIn account you just confirmed. Check it before using any of it."
-        foot={
-          <>
-            {error && <FlowError>{error}</FlowError>}
-            <Button variant="primary" size="lg" loading={busy} onClick={() => answer(true)}>
-              Yes, use these details
-            </Button>
-            <Button variant="secondary" size="lg" disabled={busy} onClick={() => answer(false)}>
-              This isn't me
-            </Button>
-            <p className="k-caption k-center">You can edit every field on the next screen.</p>
-          </>
-        }
-      >
-        <div className={`k-badge k-brick--${me?.block?.color ?? "blue"}`}>
-          <div className="k-badge__top" aria-hidden="true" />
-          <div className="k-badge__band">
-            <h2>
-              {first}
-              {rest.length > 0 && <span>{rest.join(" ")}</span>}
-            </h2>
-            {candidate.pictureUrl ? <img src={candidate.pictureUrl} alt="" referrerPolicy="no-referrer" /> : null}
-          </div>
-          <div className="k-badge__meta">
-            {candidate.email && <b>{candidate.email}</b>}
-            <span className="k-caption">{candidate.emailMatchesAccount ? "Same email as the account you signed in with" : "A different email from the one you signed in with"}</span>
-            {me?.linkedinProfile && (
-              <small>
-                <Link2 className="pd-i" aria-hidden="true" style={{ width: 14, height: 14 }} />
-                From linkedin.com/in/{me.linkedinProfile.username}
-              </small>
-            )}
-          </div>
-        </div>
-        <p className="k-onb__sub" style={{ marginTop: "var(--space-5)" }}>
-          If this is you, we'll use your name{candidate.pictureUrl ? " and photo" : ""} to fill in your profile. You add your role, company and location yourself.
-        </p>
-      </Flow>
-    );
-  }
-
   return (
     <div className="k-flow">
       <div className="pd-page pd-page--narrow">
@@ -113,6 +61,36 @@ export default function Callback({ provider }: { provider: "linkedin" | "luma" }
             <div className="k-flow__foot">
               <Button variant="primary" size="lg" onClick={() => navigate(takeReturnTo(), { replace: true })}>
                 Go back
+              </Button>
+            </div>
+          </>
+        ) : candidate ? (
+          <>
+            <h1 className="title">Is this you?</h1>
+            <p className="k-muted" style={{ marginTop: "var(--space-3)" }}>
+              Nothing from LinkedIn is saved until you say yes.
+            </p>
+            <div className="k-identity">
+              {candidate.pictureUrl ? (
+                <img src={candidate.pictureUrl} alt={candidate.name} referrerPolicy="no-referrer" />
+              ) : (
+                <span className="pd-avatar pd-avatar--lg">{candidate.name.slice(0, 1)}</span>
+              )}
+              <h2 className="heading">{candidate.name}</h2>
+              {candidate.email && (
+                <p className="k-caption">
+                  {candidate.email}
+                  <br />
+                  {candidate.emailMatchesAccount ? "Same email as your Google account" : "Different from your Google email"}
+                </p>
+              )}
+            </div>
+            <div className="k-flow__foot">
+              <Button variant="primary" size="lg" loading={busy} onClick={() => answer(true)}>
+                Yes, that's me
+              </Button>
+              <Button variant="ghost" disabled={busy} onClick={() => answer(false)}>
+                No, that's not me
               </Button>
             </div>
           </>

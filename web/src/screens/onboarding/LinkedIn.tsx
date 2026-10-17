@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Info } from "lucide-react";
-import { Api, ApiError, type Me } from "../../lib/api";
-import { startRedirect } from "../../lib/sources";
+import { Info, Link2 } from "lucide-react";
+import { Api, type Me } from "../../lib/api";
 import Button from "../../ui/Button";
+import KlickBadge from "../../ui/KlickBadge";
 import Flow, { FlowError, useGo } from "./Flow";
+import { myPhoto } from "./photo";
 
 // Accepts "diya-k", "linkedin.com/in/diya-k" or a full profile URL, and keeps just the username.
 function linkedinUsername(input: string): string {
@@ -13,61 +14,50 @@ function linkedinUsername(input: string): string {
 }
 const VALID = /^[A-Za-z0-9-]{3,100}$/;
 
-// Step 4: their LinkedIn link, kept as a private contact detail. "Find my profile" is LinkedIn's own
-// sign-in (name, photo, email), shown back as "Is this you?". Klick never reads LinkedIn pages.
+// Step 4: their Klick badge, and the LinkedIn link it carries. The link is self-reported and kept
+// as a private contact detail; Klick never looks anyone up on LinkedIn.
 export default function LinkedIn({ me }: { me: Me }) {
-  const { go, busy: moving, error, setError } = useGo();
+  const { go, busy, error, setError } = useGo();
   const [value, setValue] = useState(me.linkedinProfile ? `linkedin.com/in/${me.linkedinProfile.username}` : "");
-  const [busy, setBusy] = useState<"find" | "manual" | null>(null);
   const username = linkedinUsername(value);
   const invalid = value.trim() !== "" && !VALID.test(username);
 
-  async function saveLink() {
-    if (value.trim() && username !== me.linkedinProfile?.username) await Api.linkedinUsername(username);
-  }
-
-  async function find() {
-    if (invalid) return setError("Use your profile link, like linkedin.com/in/your-name.");
-    setBusy("find");
-    setError("");
-    try {
-      await saveLink();
-      await startRedirect("linkedin", "/");
-    } catch (e) {
-      setBusy(null);
-      setError(
-        e instanceof ApiError && e.status === 503
-          ? "LinkedIn sign-in isn't available right now. Enter your details instead."
-          : "Couldn't reach LinkedIn. Check your connection, then retry.",
-      );
-    }
-  }
-
-  async function manual() {
-    if (invalid) return setError("Use your profile link, like linkedin.com/in/your-name, or clear the box.");
-    setBusy("manual");
-    await go("profile", saveLink);
-    setBusy(null);
+  function save() {
+    if (!VALID.test(username)) return setError("Use your profile link, like linkedin.com/in/your-name.");
+    return go("profile", async () => {
+      if (username.toLowerCase() !== me.linkedinProfile?.username) await Api.linkedinUsername(username);
+    });
   }
 
   return (
     <Flow
       step={4}
       onBack={() => go("block")}
-      title="Start from your LinkedIn"
-      sub="Paste your profile link, then confirm with LinkedIn and we'll suggest your name and photo. You review everything before it's saved."
+      title="Add your LinkedIn"
+      sub="It goes on your Klick badge. People see it only if you share it after you both accept."
       foot={
-        <p className="k-note">
-          <Info className="pd-i" aria-hidden="true" />
-          <span>Klick never posts to LinkedIn or messages anyone for you.</span>
-        </p>
+        <>
+          <FlowError>{error}</FlowError>
+          <Button variant="primary" size="lg" loading={busy} disabled={!value.trim() || invalid || busy} onClick={save}>
+            Continue
+          </Button>
+          <button type="button" className="k-onb__link" disabled={busy} onClick={() => go("profile")}>
+            Skip for now
+          </button>
+        </>
       }
     >
+      <KlickBadge color={me.block?.color ?? "blue"} name={me.displayName === "New member" ? "Your name" : me.displayName} label="Klick member" photo={myPhoto(me)?.url}>
+        <small>
+          <Link2 className="pd-i" aria-hidden="true" style={{ width: 14, height: 14 }} />
+          {VALID.test(username) ? `linkedin.com/in/${username.toLowerCase()}` : "Your LinkedIn goes here"}
+        </small>
+      </KlickBadge>
       <form
         className="k-onb__body"
         onSubmit={(e) => {
           e.preventDefault();
-          find();
+          save();
         }}
       >
         <div className="pd-field">
@@ -86,15 +76,12 @@ export default function LinkedIn({ me }: { me: Me }) {
               setError("");
             }}
           />
-          <span className="pd-hint">Kept private. People see it only if you share it after a Klick.</span>
+          <span className="pd-hint">You can paste your whole profile link.</span>
         </div>
-        <FlowError>{error}</FlowError>
-        <Button type="submit" variant="primary" size="lg" loading={busy === "find"} disabled={!!busy || moving}>
-          Find my profile
-        </Button>
-        <button type="button" className="k-onb__link" disabled={!!busy || moving} onClick={manual}>
-          Enter my details manually
-        </button>
+        <p className="k-note">
+          <Info className="pd-i" aria-hidden="true" />
+          <span>Klick never posts to LinkedIn or messages anyone for you.</span>
+        </p>
       </form>
     </Flow>
   );
