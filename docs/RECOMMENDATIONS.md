@@ -1,6 +1,6 @@
 # Recommendations and sharing: what we borrow from X's ranking
 
-How hey-os decides which people and events to suggest, and how it grows by people sharing it, using ideas from X's (Twitter's) ranking system. Written 13 Oct 2026.
+How Klick decides which people and events to suggest, and how it grows by people sharing it, using ideas from X's (Twitter's) ranking system. Written 13 Oct 2026.
 
 **Source note.** The numbers below come from the code X open-sourced in March 2023 (`twitter/the-algorithm` and `the-algorithm-ml`). X has said its ranking has changed since, so treat this as a pattern to learn from, not a description of X today.
 
@@ -24,20 +24,20 @@ How hey-os decides which people and events to suggest, and how it grows by peopl
 3. **Filters and heuristics.** Remove blocked or muted authors, keep author diversity (don't show five posts from one person in a row), balance in-network and out-of-network, and back off after negative feedback ("feedback fatigue").
 4. **Mixing.** Insert ads, follow suggestions and prompts into the final list.
 
-## 2. What hey-os takes from it
+## 2. What Klick takes from it
 
-hey-os ranks **people to meet at an event you're attending**, **follow-ups worth sending**, and (later) **events worth going to**. The X pattern maps well, with one big change: our goal is a real conversation between two people who both said yes, not time spent in the app.
+Klick ranks **people to meet at an event you're attending**, **follow-ups worth sending**, and (later) **events worth going to**. The X pattern maps well, with one big change: our goal is a real conversation between two people who both said yes, not time spent in the app.
 
 ### People matches (`GET /v1/events/:id/matches`)
 
-| X stage | hey-os today | Next step |
+| X stage | Klick today | Next step |
 |---|---|---|
 | Candidate sourcing | Only members confirmed for the same event who chose to be visible (R2), reciprocal | Add "out-of-network": people your accepted connections met at earlier events, if both sides allow it |
 | Light ranker | `overlapRank`: shared interests, topics, "looking for" vs "offering" | Add questionnaire embeddings (Vertex AI text embeddings, already indexed on `members.embedding`) |
 | Heavy ranker | Gemini ranks the top 20 and explains each with quoted evidence | Feed outcome signals back in (table below) |
 | Filters | Drops blocked, pending and already accepted people; drops invented ids | Diversity: don't show five people from the same company; cap per session |
 
-**Outcome signals we can learn from, weighted the X way** (none of these need data about anyone outside hey-os):
+**Outcome signals we can learn from, weighted the X way** (none of these need data about anyone outside Klick):
 
 | Signal | Proposed weight | Why |
 |---|---|---|
@@ -57,26 +57,26 @@ Only events that are **public on their provider** can be suggested, and the reas
 
 - "3 of your connections are going" (only accepted connections who didn't hide themselves).
 - "Matches your topics: Climate, AI" (from the event's tags and your questionnaire).
-- "42 hey-os members going" (counts only, floored at "fewer than 3").
+- "42 Klick members going" (counts only, floored at "fewer than 3").
 
-Score idea: `0.4 × topic match + 0.3 × connections going + 0.2 × how many hey-os members going (log scale) + 0.1 × freshness`, minus a penalty for categories you dismissed.
+Score idea: `0.4 × topic match + 0.3 × connections going + 0.2 × how many Klick members going (log scale) + 0.1 × freshness`, minus a penalty for categories you dismissed.
 
 ## 3. Sharing and growth (virality)
 
-X grows because every repost shows a post to a new audience. hey-os can grow the same way, but only through things a member chooses to share (no automatic outreach, per the brief).
+X grows because every repost shows a post to a new audience. Klick can grow the same way, but only through things a member chooses to share (no automatic outreach, per the brief).
 
 | Loop | What the member does | What the receiver sees |
 |---|---|---|
-| **"I'm going" card** | Shares an event card to WhatsApp, X or LinkedIn from the event page | Event name, date, cover, "12 people from hey-os are going", and a join link with an invite code |
-| **Invite a friend to an event** | Picks a contact on their own phone and sends the link themselves | "Asha invited you to meet people at DevFest Pune on hey-os" |
+| **"I'm going" card** | Shares an event card to WhatsApp, X or LinkedIn from the event page | Event name, date, cover, "12 people from Klick are going", and a join link with an invite code |
+| **Invite a friend to an event** | Picks a contact on their own phone and sends the link themselves | "Asha invited you to meet people at DevFest Pune on Klick" |
 | **Post-event recap** | Shares "I met 5 people at DevFest, here's what we talked about" (only their own memories, chosen by them) | A recap card and the join link |
-| **Reconnect** | Sends a Gemini-drafted follow-up themselves | A personal message (no hey-os branding needed) |
+| **Reconnect** | Sends a Gemini-drafted follow-up themselves | A personal message (no Klick branding needed) |
 
 **Measuring it.** K-factor = invites sent per member × share of invites that join. Above 1 means each member brings in more than one new member. We'd track invite code → signup → connected source → first accepted connection.
 
-## 4. "A is on hey-os, B and C are not": what we can and can't show
+## 4. "A is on Klick, B and C are not": what we can and can't show
 
-Luma shows "Going: A, B, C" because Luma is the host's tool and guests agreed to Luma's rules. hey-os can't do the same:
+Luma shows "Going: A, B, C" because Luma is the host's tool and guests agreed to Luma's rules. Klick can't do the same:
 
 - **We never see B and C.** We import only each member's own events (R1). Luma's guest list is only available to hosts, and Calendar's guest list is someone else's data.
 - **The brief rules it out.** It says no guest-list operations and no public attendee scraping.
@@ -86,8 +86,8 @@ What we show instead:
 
 | Instead of | We show |
 |---|---|
-| A list of everyone going | "N hey-os members going" (counts only; "fewer than 3" for tiny numbers so no one is singled out) |
-| "B and C are not on hey-os" | Luma's own public "N going" when the provider shows it (`providerGuestCount`), side by side with the hey-os number |
+| A list of everyone going | "N Klick members going" (counts only; "fewer than 3" for tiny numbers so no one is singled out) |
+| "B and C are not on Klick" | Luma's own public "N going" when the provider shows it (`providerGuestCount`), side by side with the Klick number |
 | Names of people going | Your own accepted connections who are going, and match suggestions among people who opted in |
 | Contacting B and C for you | An invite link you send yourself |
 
@@ -95,5 +95,5 @@ What we show instead:
 
 - One event record per real event. A second member importing the same Luma or Calendar event joins the existing record, and a Calendar invite containing a lu.ma link joins the Luma event.
 - Luma-style details: category, tags, organizer, cover image, provider guest count.
-- `GET /v1/events/:id`: the event, how many hey-os members are going, how many are discoverable, and which of your connections are going.
+- `GET /v1/events/:id`: the event, how many Klick members are going, how many are discoverable, and which of your connections are going.
 - Not built yet: event recommendations, share cards, invite codes and the signal weights above.
