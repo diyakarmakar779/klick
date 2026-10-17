@@ -46,6 +46,21 @@ export const LinkedInIdentity = z.object({
 });
 export type LinkedInIdentity = z.infer<typeof LinkedInIdentity>;
 
+// LinkedIn public profile names are 3-100 letters, numbers or hyphens: linkedin.com/in/<username>.
+export const LinkedInUsername = z
+  .string()
+  .trim()
+  .regex(/^[A-Za-z0-9-]{3,100}$/, "Use the part after linkedin.com/in/");
+
+// The member's own LinkedIn page, typed in by them. Self-reported: only "Sign in with LinkedIn" counts as linked.
+export const LinkedInProfile = z.object({
+  username: LinkedInUsername,
+  url: z.string(),
+  source: z.literal("self_reported"),
+  addedAt: timestamp,
+});
+export type LinkedInProfile = z.infer<typeof LinkedInProfile>;
+
 // Onboarding questionnaire: the member's own words, used as matching context.
 export const Questionnaire = z.object({
   lookingFor: z.array(z.string().max(60)).max(8).default([]), // e.g. "co-founder", "backend engineer to hire"
@@ -83,6 +98,7 @@ export const Member = z.object({
   // so headline/role/company come from the member (typed, or extracted from their own profile PDF).
   linkedin: LinkedInIdentity.nullable().default(null),
   linkedinCandidate: LinkedInIdentity.nullable().default(null), // awaiting "Is this you?"
+  linkedinProfile: LinkedInProfile.nullable().default(null),
   questionnaire: Questionnaire.nullable().default(null),
   onboarding: z
     .object({

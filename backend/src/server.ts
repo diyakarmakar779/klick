@@ -35,12 +35,13 @@ import { ownsPath, signedUploadUrl } from "./lib/storage.js";
 import { authorizeUrl, exchangeCode } from "./lib/linkedin.js";
 import {
   confirmLinkedIn,
+  setLinkedInUsername,
   finishIntegrations,
   saveQuestionnaire,
   setLinkedInCandidate,
   skipIdentity,
 } from "./db/repos/onboarding.js";
-import { Questionnaire } from "./db/schema.js";
+import { LinkedInUsername, Questionnaire } from "./db/schema.js";
 import {
   createFollowUp,
   createMemory,
@@ -142,6 +143,10 @@ export function buildServer() {
       api.post("/onboarding/linkedin/confirm", async (req) => {
         const { isMe } = z.object({ isMe: z.boolean() }).parse(req.body);
         return ownProfile(await confirmLinkedIn(req.memberId, isMe));
+      });
+      api.put("/onboarding/linkedin/username", async (req) => {
+        const { username } = z.object({ username: LinkedInUsername }).parse(req.body);
+        return ownProfile(await setLinkedInUsername(req.memberId, username));
       });
       api.post("/onboarding/identity/skip", async (req) => ownProfile(await skipIdentity(req.memberId)));
       api.post("/onboarding/integrations/done", async (req) => ownProfile(await finishIntegrations(req.memberId)));

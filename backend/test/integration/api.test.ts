@@ -397,6 +397,17 @@ describe("onboarding", () => {
     expect(done.questionnaire.lookingFor).toContain("co-founder");
   });
 
+  it("step 1 saves the LinkedIn username as a private contact link and moves on", async () => {
+    await call("diya", "PUT", "/v1/me", {});
+    expect((await call("diya", "PUT", "/v1/onboarding/linkedin/username", { username: "https://evil.example/x" })).status).toBe(400);
+    expect((await call("diya", "PUT", "/v1/onboarding/linkedin/username", { username: "ab" })).status).toBe(400);
+    const me = (await call("diya", "PUT", "/v1/onboarding/linkedin/username", { username: "Diya-Karmakar" })).body;
+    expect(me.linkedinProfile).toMatchObject({ username: "diya-karmakar", url: "https://www.linkedin.com/in/diya-karmakar", source: "self_reported" });
+    expect(me.contact.linkedin).toBe("https://www.linkedin.com/in/diya-karmakar"); // private until shared on a Klick
+    expect(me.linkedin).toBeNull(); // typing a username is not a LinkedIn sign-in
+    expect(me.onboarding.step).toBe("integrations");
+  });
+
   it("LinkedIn sign-in uses a server-made, one-use state and an allowed return address", async () => {
     await call("diya", "PUT", "/v1/me", {});
     process.env.WEB_URL = "https://hey-os.web.app";
