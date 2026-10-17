@@ -75,7 +75,7 @@ export default function Klicks() {
     <>
       <Header title="Klicks" />
       <div className="pd-page k-stack">
-        <div className="pd-seg" role="tablist" aria-label="Which Klicks">
+        <div className="k-seg" role="tablist" aria-label="Which Klicks">
           {(Object.keys(label) as View[]).map((v) => (
             <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)}>
               {label[v]}
