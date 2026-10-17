@@ -91,18 +91,7 @@ export const SharingDefaults = z.object({
 });
 export type SharingDefaults = z.infer<typeof SharingDefaults>;
 
-export const ONBOARDING_STEPS = [
-  "consent",
-  "block",
-  "identity",
-  "profile",
-  "questionnaire",
-  "sharing",
-  "discoverability",
-  "integrations",
-  "review",
-  "done",
-] as const;
+export const ONBOARDING_STEPS = ["account", "consent", "identity", "integrations", "questionnaire", "done"] as const;
 export const OnboardingStep = z.enum(ONBOARDING_STEPS);
 export type OnboardingStep = z.infer<typeof OnboardingStep>;
 
@@ -142,7 +131,7 @@ export const Member = z.object({
   onboarding: z
     .object({
       // Welcome and sign-in come first; the steps below run once signed in. Older members may be on any of them.
-      step: OnboardingStep.default("consent"),
+      step: OnboardingStep.default("account"),
       completedAt: timestamp.nullable().default(null),
     })
     .default({}),

@@ -1,5 +1,5 @@
-// Onboarding, once signed in: consent -> block -> LinkedIn ("Is this you?") -> profile -> goals
-// -> sharing -> who can find you -> event source -> review -> done.
+// Onboarding, once signed in with Google: verified email -> consent -> LinkedIn -> event sources
+// -> who you want to meet -> done.
 import { getDb } from "../firestore.js";
 import { COLLECTIONS, LinkedInIdentity, LinkedInProfile, Questionnaire, type Member, type OnboardingStep } from "../schema.js";
 import { ConsentError } from "../../domain/consent.js";
@@ -38,7 +38,7 @@ export async function confirmLinkedIn(memberId: string, isMe: boolean) {
   if (isMe) {
     update.linkedin = { ...m.linkedinCandidate, confirmedAt: now };
     if (!m.displayName || m.displayName === "New member") update.displayName = m.linkedinCandidate.name;
-    update.onboarding = { step: "profile", completedAt: null };
+    update.onboarding = { step: "integrations", completedAt: null };
   }
   await doc(memberId).set(update, { merge: true });
   return mustGet(memberId);
@@ -70,13 +70,13 @@ export async function setOnboardingStep(memberId: string, step: OnboardingStep) 
   return mustGet(memberId);
 }
 
-export const skipIdentity = (memberId: string) => setOnboardingStep(memberId, "profile");
-export const finishIntegrations = (memberId: string) => setOnboardingStep(memberId, "review");
+export const skipIdentity = (memberId: string) => setOnboardingStep(memberId, "integrations");
+export const finishIntegrations = (memberId: string) => setOnboardingStep(memberId, "questionnaire");
 
 export async function saveQuestionnaire(memberId: string, input: Omit<Questionnaire, "updatedAt">) {
   await mustGet(memberId);
   const now = new Date();
   const q = Questionnaire.parse({ ...input, updatedAt: now });
-  await doc(memberId).set({ questionnaire: q, onboarding: { step: "sharing", completedAt: null }, updatedAt: now }, { merge: true });
+  await doc(memberId).set({ questionnaire: q, onboarding: { step: "done", completedAt: now }, updatedAt: now }, { merge: true });
   return mustGet(memberId);
 }

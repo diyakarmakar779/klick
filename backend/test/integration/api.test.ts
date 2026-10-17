@@ -395,8 +395,10 @@ describe("QR exchange and field-level sharing", () => {
 
 
 describe("onboarding", () => {
-  it("LinkedIn candidate -> 'Is this you?' -> profile -> goals -> sharing -> sources -> review -> done", async () => {
-    expect((await call("diya", "PUT", "/v1/me", {})).body.onboarding.step).toBe("consent");
+  it("verified email -> consent -> LinkedIn -> sources -> who you want to meet -> done", async () => {
+    expect((await call("diya", "PUT", "/v1/me", {})).body.onboarding.step).toBe("account");
+    expect((await call("diya", "PUT", "/v1/onboarding/step", { step: "consent" })).body.onboarding.step).toBe("consent");
+    expect((await call("diya", "PUT", "/v1/onboarding/step", { step: "identity" })).body.onboarding.step).toBe("identity");
     const cand = await setLinkedInCandidate("diya", { sub: "li-123", name: "Diya S", email: "diya@execora.in", email_verified: true }, "diya@execora.in");
     expect(cand.emailMatchesAccount).toBe(true);
     // Not applied until confirmed.
@@ -404,22 +406,20 @@ describe("onboarding", () => {
     const confirmed = (await call("diya", "POST", "/v1/onboarding/linkedin/confirm", { isMe: true })).body;
     expect(confirmed.linkedin.name).toBe("Diya S");
     expect(confirmed.displayName).toBe("Diya S");
-    expect(confirmed.onboarding.step).toBe("profile");
-    const goals = (await call("diya", "PUT", "/v1/onboarding/questionnaire", {
+    expect(confirmed.onboarding.step).toBe("integrations");
+    await call("diya", "POST", "/v1/sources/mock_luma/connect");
+    expect((await call("diya", "POST", "/v1/onboarding/integrations/done")).body.onboarding.step).toBe("questionnaire");
+    const done = (await call("diya", "PUT", "/v1/onboarding/questionnaire", {
       lookingFor: ["co-founder", "backend engineer to hire"], offering: ["product strategy"], topics: ["community"],
     })).body;
-    expect(goals.onboarding.step).toBe("sharing");
-    expect(goals.questionnaire.lookingFor).toContain("co-founder");
-    await call("diya", "POST", "/v1/sources/mock_luma/connect");
-    expect((await call("diya", "POST", "/v1/onboarding/integrations/done")).body.onboarding.step).toBe("review");
-    const done = (await call("diya", "PUT", "/v1/onboarding/step", { step: "done" })).body;
     expect(done.onboarding.step).toBe("done");
     expect(done.onboarding.completedAt).toBeTruthy();
+    expect(done.questionnaire.lookingFor).toContain("co-founder");
   });
 
   it("moves between steps, back and forward, and refuses unknown steps", async () => {
     await call("diya", "PUT", "/v1/me", {});
-    expect((await call("diya", "PUT", "/v1/onboarding/step", { step: "block" })).body.onboarding.step).toBe("block");
+    expect((await call("diya", "PUT", "/v1/onboarding/step", { step: "integrations" })).body.onboarding.step).toBe("integrations");
     expect((await call("diya", "PUT", "/v1/onboarding/step", { step: "consent" })).body.onboarding.step).toBe("consent");
     expect((await call("diya", "PUT", "/v1/onboarding/step", { step: "admin" })).status).toBe(400);
   });
@@ -443,7 +443,7 @@ describe("onboarding", () => {
     expect(me.linkedinProfile).toMatchObject({ username: "diya-karmakar", url: "https://www.linkedin.com/in/diya-karmakar", source: "self_reported" });
     expect(me.contact.linkedin).toBe("https://www.linkedin.com/in/diya-karmakar"); // private until shared on a Klick
     expect(me.linkedin).toBeNull(); // typing a username is not a LinkedIn sign-in
-    expect(me.onboarding.step).toBe("consent");
+    expect(me.onboarding.step).toBe("account");
   });
 
   it("LinkedIn sign-in uses a server-made, one-use state and an allowed return address", async () => {
