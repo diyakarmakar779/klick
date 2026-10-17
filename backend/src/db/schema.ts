@@ -46,6 +46,17 @@ export const LinkedInIdentity = z.object({
 });
 export type LinkedInIdentity = z.infer<typeof LinkedInIdentity>;
 
+// A public LinkedIn profile the member picked as theirs from a web search. Self-reported: picking it
+// proves nothing, so only "Sign in with LinkedIn" counts as linked.
+export const LinkedInProfile = z.object({
+  url: z.string().regex(/^https:\/\/www\.linkedin\.com\/in\/[^/?#]+$/),
+  name: z.string().max(120),
+  headline: z.string().max(140).default(""),
+  source: z.literal("web_search"),
+  confirmedAt: timestamp,
+});
+export type LinkedInProfile = z.infer<typeof LinkedInProfile>;
+
 // Onboarding questionnaire: the member's own words, used as matching context.
 export const Questionnaire = z.object({
   lookingFor: z.array(z.string().max(60)).max(8).default([]), // e.g. "co-founder", "backend engineer to hire"
@@ -83,6 +94,7 @@ export const Member = z.object({
   // so headline/role/company come from the member (typed, or extracted from their own profile PDF).
   linkedin: LinkedInIdentity.nullable().default(null),
   linkedinCandidate: LinkedInIdentity.nullable().default(null), // awaiting "Is this you?"
+  linkedinProfile: LinkedInProfile.nullable().default(null),
   questionnaire: Questionnaire.nullable().default(null),
   onboarding: z
     .object({

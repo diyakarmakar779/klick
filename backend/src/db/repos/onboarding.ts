@@ -1,6 +1,6 @@
 // Onboarding: identity ("Is this you?") -> integrations -> questionnaire.
 import { getDb } from "../firestore.js";
-import { COLLECTIONS, LinkedInIdentity, Questionnaire, type Member } from "../schema.js";
+import { COLLECTIONS, LinkedInIdentity, LinkedInProfile, Questionnaire, type Member } from "../schema.js";
 import { ConsentError } from "../../domain/consent.js";
 import type { LinkedInUserInfo } from "../../lib/linkedin.js";
 import { getMember } from "./members.js";
@@ -39,6 +39,24 @@ export async function confirmLinkedIn(memberId: string, isMe: boolean) {
     if (!m.displayName || m.displayName === "New member") update.displayName = m.linkedinCandidate.name;
     update.onboarding = { step: "integrations", completedAt: null };
   }
+  await doc(memberId).set(update, { merge: true });
+  return mustGet(memberId);
+}
+
+// The member picked a search result as their own profile. Fills only what's still empty, and keeps the
+// link as a private contact detail that is shared only when they choose to on a Klick.
+export async function chooseLinkedInProfile(memberId: string, pick: { url: string; name: string; headline: string }) {
+  const m = await mustGet(memberId);
+  const now = new Date();
+  const profile = LinkedInProfile.parse({ ...pick, source: "web_search", confirmedAt: now });
+  const update: Partial<Member> = {
+    linkedinProfile: profile,
+    contact: { ...m.contact, linkedin: m.contact.linkedin || profile.url },
+    onboarding: { step: "integrations", completedAt: null },
+    updatedAt: now,
+  };
+  if (!m.headline && profile.headline) update.headline = profile.headline;
+  if (!m.displayName || m.displayName === "New member") update.displayName = profile.name;
   await doc(memberId).set(update, { merge: true });
   return mustGet(memberId);
 }

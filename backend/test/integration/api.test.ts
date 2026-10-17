@@ -397,6 +397,22 @@ describe("onboarding", () => {
     expect(done.questionnaire.lookingFor).toContain("co-founder");
   });
 
+  it("'Is this you?' from a web search: no key means fall back, picking a result fills only what's empty", async () => {
+    await call("diya", "PUT", "/v1/me", { displayName: "Diya Karmakar" });
+    delete process.env.BRAVE_SEARCH_API_KEY;
+    expect((await call("diya", "GET", "/v1/onboarding/linkedin/matches")).status).toBe(503);
+    expect((await call("diya", "POST", "/v1/onboarding/linkedin/choose", { url: "https://evil.example/in/x", name: "X" })).status).toBe(400);
+    const me = (await call("diya", "POST", "/v1/onboarding/linkedin/choose", {
+      url: "https://www.linkedin.com/in/diya-k", name: "Diya K", headline: "Founder · Execora",
+    })).body;
+    expect(me.linkedinProfile).toMatchObject({ url: "https://www.linkedin.com/in/diya-k", source: "web_search" });
+    expect(me.contact.linkedin).toBe("https://www.linkedin.com/in/diya-k"); // private until shared on a Klick
+    expect(me.headline).toBe("Founder · Execora");
+    expect(me.displayName).toBe("Diya Karmakar"); // the Google name is kept
+    expect(me.linkedin).toBeNull(); // picking a result is not a LinkedIn sign-in
+    expect(me.onboarding.step).toBe("integrations");
+  });
+
   it("LinkedIn sign-in uses a server-made, one-use state and an allowed return address", async () => {
     await call("diya", "PUT", "/v1/me", {});
     process.env.WEB_URL = "https://hey-os.web.app";
