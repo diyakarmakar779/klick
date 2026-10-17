@@ -37,7 +37,7 @@ export function lumaRedirectUris(): string[] {
 export function clientMetadataDocument() {
   return {
     client_id: lumaClientId(),
-    client_name: "hey-os",
+    client_name: "Klick",
     client_uri: process.env.WEB_URL ?? "https://github.com/diyakarmakar779/hey-os",
     redirect_uris: lumaRedirectUris(),
     grant_types: ["authorization_code"],
@@ -75,7 +75,7 @@ export async function finishLumaAuth(p: { code: string; codeVerifier: string; re
 }
 
 export async function withLuma<T>(accessToken: string, fn: (c: Client) => Promise<T>): Promise<T> {
-  const client = new Client({ name: "hey-os", version: "0.1.0" });
+  const client = new Client({ name: "klick", version: "0.1.0" });
   const transport = new StreamableHTTPClientTransport(new URL(LUMA_MCP_URL), {
     requestInit: { headers: { Authorization: `Bearer ${accessToken}` } },
   });

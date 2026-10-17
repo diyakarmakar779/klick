@@ -86,7 +86,7 @@ export function buildServer() {
   // Not /healthz: Cloud Run reserves paths ending in "z".
   app.get("/health", async () => ({ ok: true }));
 
-  // Public: Luma fetches this to identify hey-os (OAuth Client ID Metadata Document; Luma has no client registration).
+  // Public: Luma fetches this to identify Klick (OAuth Client ID Metadata Document; Luma has no client registration).
   app.get("/oauth/luma-client.json", async (_req, reply) => {
     try {
       return clientMetadataDocument();

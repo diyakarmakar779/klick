@@ -1,4 +1,4 @@
-// Firestore data model for Connected Event Networking.
+// Firestore data model for Klick.
 // One Zod schema per entity in the brief. Every document carries provenance where the brief requires it.
 import { z } from "zod";
 

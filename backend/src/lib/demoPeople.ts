@@ -1,4 +1,4 @@
-// Sample members for the demo. They import the same mock Luma events, so a judge who taps "Demo events"
+// Sample members for the demo. They import the same mock Luma events, so anyone who taps "Demo events"
 // lands among people with real roles, goals and things to talk about. Every id starts with "demo-".
 import type { Member, Questionnaire } from "../db/schema.js";
 
