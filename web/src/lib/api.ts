@@ -59,6 +59,9 @@ export const Api = {
   linkedinCallback: (code: string, state: string) =>
     api<{ candidate: LinkedInCandidate }>("/v1/onboarding/linkedin/callback", { method: "POST", body: { code, state } }),
   linkedinConfirm: (isMe: boolean) => api<Me>("/v1/onboarding/linkedin/confirm", { method: "POST", body: { isMe } }),
+  linkedinMatches: () => api<{ matches: ProfileMatch[] }>("/v1/onboarding/linkedin/matches"),
+  linkedinChoose: (m: ProfileMatch) =>
+    api<Me>("/v1/onboarding/linkedin/choose", { method: "POST", body: { url: m.url, name: m.name, headline: m.headline } }),
   joinDemoEvents: () => api<{ imported: number }>("/v1/sources/mock_luma/connect", { method: "POST" }),
   setVisibility: (eventId: string, visibility: Visibility | null) =>
     api(`/v1/events/${eventId}/visibility`, { method: "PUT", body: { visibility } }),
@@ -218,6 +221,14 @@ export interface LinkedInCandidate {
   emailMatchesAccount: boolean;
 }
 
+// A public LinkedIn page found by searching the member's Google name. Only what the search result shows.
+export interface ProfileMatch {
+  url: string;
+  name: string;
+  headline: string;
+  snippet: string;
+}
+
 export interface Questionnaire {
   lookingFor: string[];
   lookingForDetail: string;
@@ -246,6 +257,7 @@ export interface Me {
   defaultVisibility: Visibility;
   contact: Partial<Record<ContactField, string>>;
   linkedin: (LinkedInCandidate & { confirmedAt: string }) | null;
+  linkedinProfile: { url: string; name: string; headline: string; source: "web_search"; confirmedAt: string } | null;
   questionnaire: Questionnaire | null;
   onboarding: { step: "identity" | "integrations" | "questionnaire" | "done"; completedAt: string | null };
 }
