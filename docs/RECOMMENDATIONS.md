@@ -53,7 +53,7 @@ At demo scale we'd use these to re-weight the light ranker (and include them in 
 
 ### Event recommendations (partly built)
 
-**Built: Discover** (`GET /v1/discover`). It lists upcoming events you aren't part of yet that at least one of your accepted Klicks is going to (and doesn't hide from Klicks), sorted by date. Each shows:
+**Built: Discover** (`GET /v1/discover`). It lists upcoming Luma events you aren't part of yet that at least one of your accepted Klicks is going to (and doesn't hide from Klicks), sorted by date. Calendar-only events never appear, since they can be private meetings. Each shows:
 
 - Which of your Klicks are going, by name, since you already know them.
 - How many other members going are worth meeting, as a count floored at "fewer than 3".
