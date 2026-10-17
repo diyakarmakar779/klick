@@ -38,7 +38,7 @@ export function clientMetadataDocument() {
   return {
     client_id: lumaClientId(),
     client_name: "Klick",
-    client_uri: process.env.WEB_URL ?? "https://github.com/diyakarmakar779/hey-os",
+    client_uri: process.env.WEB_URL ?? "https://github.com/diyakarmakar779/klick",
     redirect_uris: lumaRedirectUris(),
     grant_types: ["authorization_code"],
     response_types: ["code"],

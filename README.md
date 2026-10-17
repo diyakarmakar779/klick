@@ -8,7 +8,7 @@ Members connect Google Calendar and Luma, see which of their Klicks are going, g
 - Architecture, data model and privacy rules: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - How suggestions are ranked: [`docs/RECOMMENDATIONS.md`](docs/RECOMMENDATIONS.md)
 
-The repository and Google Cloud project keep their original names (`hey-os`, `hey-os-511517`), so those appear in URLs and config.
+The Google Cloud project keeps its original id (`hey-os-511517`), so that appears in the app's URL and config.
 
 ## How it uses Google Cloud
 
