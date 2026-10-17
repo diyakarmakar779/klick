@@ -33,9 +33,7 @@ import {
 import { createQrToken, previewQr, resolveQrToken, sharedEvent } from "./db/repos/qr.js";
 import { ownsPath, signedUploadUrl } from "./lib/storage.js";
 import { authorizeUrl, exchangeCode } from "./lib/linkedin.js";
-import { searchLinkedInProfiles, type ProfileMatch } from "./lib/profileSearch.js";
 import {
-  chooseLinkedInProfile,
   confirmLinkedIn,
   finishIntegrations,
   saveQuestionnaire,
@@ -62,9 +60,6 @@ import { analyzeMemory, draftFollowUp, draftFollowUpById, eventPeopleDetail, eve
 import { CALENDAR_SCOPE, fetchCalendarEvents } from "./lib/googleCalendar.js";
 import { clientMetadataDocument, fetchLumaEvents, finishLumaAuth, startLumaAuth } from "./lib/lumaMcp.js";
 import { newState, saveOAuthState, takeOAuthState } from "./db/repos/oauthStates.js";
-
-// Short-lived "Is this you?" search results per member, so revisiting onboarding doesn't search again.
-const profileMatchCache = new Map<string, { at: number; matches: ProfileMatch[] }>();
 
 export function buildServer() {
   const app = Fastify({ logger: process.env.NODE_ENV !== "test" });
@@ -147,30 +142,6 @@ export function buildServer() {
       api.post("/onboarding/linkedin/confirm", async (req) => {
         const { isMe } = z.object({ isMe: z.boolean() }).parse(req.body);
         return ownProfile(await confirmLinkedIn(req.memberId, isMe));
-      });
-      // "Is this you?" from a web search for the member's Google name. Cached briefly so going back and
-      // forth in onboarding doesn't search again; never written to the database.
-      api.get("/onboarding/linkedin/matches", async (req, reply) => {
-        const m = await getMember(req.memberId);
-        if (!m) return reply.code(404).send({ error: "Profile not created" });
-        if (!m.displayName || m.displayName === "New member") return { matches: [] };
-        const key = `${req.memberId}:${m.displayName}`;
-        const hit = profileMatchCache.get(key);
-        if (hit && Date.now() - hit.at < 15 * 60_000) return { matches: hit.matches };
-        try {
-          const matches = await searchLinkedInProfiles(m.displayName, req.memberEmail);
-          profileMatchCache.set(key, { at: Date.now(), matches });
-          return { matches };
-        } catch (e) {
-          const msg = (e as Error).message;
-          if (msg === "profile_search_not_configured") return reply.code(503).send({ error: "Profile search is not set up yet" });
-          if (msg === "profile_search_rate_limited") return reply.code(429).send({ error: "Too many searches, try again soon", retryable: true });
-          return reply.code(502).send({ error: "Profile search failed", retryable: true });
-        }
-      });
-      api.post("/onboarding/linkedin/choose", async (req) => {
-        const pick = z.object({ url: z.string(), name: z.string().min(1), headline: z.string().default("") }).parse(req.body);
-        return ownProfile(await chooseLinkedInProfile(req.memberId, pick));
       });
       api.post("/onboarding/identity/skip", async (req) => ownProfile(await skipIdentity(req.memberId)));
       api.post("/onboarding/integrations/done", async (req) => ownProfile(await finishIntegrations(req.memberId)));

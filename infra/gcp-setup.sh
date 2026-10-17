@@ -70,16 +70,6 @@ if [[ -n "${LINKEDIN_CLIENT_ID:-}" && -n "${LINKEDIN_CLIENT_SECRET:-}" ]]; then
   fi
 fi
 
-echo "==> Profile search key (optional; finds the member's public LinkedIn page for 'Is this you?'."
-echo "    Get a free key at https://api-dashboard.search.brave.com, then re-run with BRAVE_SEARCH_API_KEY set)"
-if [[ -n "${BRAVE_SEARCH_API_KEY:-}" ]]; then
-  if gcloud secrets describe brave-search-api-key >/dev/null 2>&1; then
-    printf %s "$BRAVE_SEARCH_API_KEY" | gcloud secrets versions add brave-search-api-key --data-file=- >/dev/null
-  else
-    printf %s "$BRAVE_SEARCH_API_KEY" | gcloud secrets create brave-search-api-key --data-file=- --replication-policy=automatic
-  fi
-fi
-
 echo "==> Firebase (Auth) on the same project"
 if ! npx -y firebase-tools projects:list 2>/dev/null | grep -q "$PROJECT_ID"; then
   npx -y firebase-tools projects:addfirebase "$PROJECT_ID" || echo "!! Add Firebase manually at https://console.firebase.google.com"
@@ -96,7 +86,7 @@ echo "==> Deploy API to Cloud Run"
 ( cd "$(dirname "$0")/../backend" && gcloud run deploy "$SERVICE" --source . --region "$REGION" \
     --service-account "$SA" --allow-unauthenticated --min-instances 0 --max-instances 3 \
     --update-env-vars "GOOGLE_CLOUD_PROJECT=$PROJECT_ID,MEDIA_BUCKET=$BUCKET,DEMO_MODE=1,GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.8-flash},VERTEX_LOCATION=global${LINKEDIN_CLIENT_ID:+,LINKEDIN_CLIENT_ID=$LINKEDIN_CLIENT_ID}" \
-    --set-secrets "JOB_SECRET=job-secret:latest$( gcloud secrets describe linkedin-client-secret >/dev/null 2>&1 && echo ',LINKEDIN_CLIENT_SECRET=linkedin-client-secret:latest' )$( gcloud secrets describe brave-search-api-key >/dev/null 2>&1 && echo ',BRAVE_SEARCH_API_KEY=brave-search-api-key:latest' )" )
+    --set-secrets "JOB_SECRET=job-secret:latest$( gcloud secrets describe linkedin-client-secret >/dev/null 2>&1 && echo ',LINKEDIN_CLIENT_SECRET=linkedin-client-secret:latest' )" )
 URL="$(gcloud run services describe "$SERVICE" --region "$REGION" --format='value(status.url)')"
 # Luma identifies us by fetching $URL/oauth/luma-client.json, so the API needs to know its own public URL.
 # Set WEB_URL=https://<project>.web.app before running to allow the web app's Luma callback.
