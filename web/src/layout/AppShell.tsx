@@ -47,9 +47,12 @@ export default function AppShell() {
   // A chat thread is full screen: its composer sits where the bottom nav would be.
   const { pathname } = useLocation();
   const thread = /^\/chats\/(ai|c)\/|^\/events\/[^/]+\/ask$/.test(pathname);
-  // Each new screen starts at the top.
+  // Each new screen starts at the top. Braces matter: newer Chrome returns a Promise from scrollTo,
+  // and an effect must return nothing or a cleanup function.
   const main = useRef<HTMLDivElement>(null);
-  useEffect(() => main.current?.scrollTo(0, 0), [pathname]);
+  useEffect(() => {
+    main.current?.scrollTo(0, 0);
+  }, [pathname]);
   const link = ({ to, label, icon: Icon, end }: (typeof ITEMS)[number]) => (
     <NavLink to={to} end={end}>
       <Icon className="pd-i" aria-hidden="true" />
