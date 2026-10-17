@@ -454,8 +454,9 @@ a.k-erow:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
 
 /* Logo and welcome bricks */
 .k-logo{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:800;letter-spacing:-.02em}
-.k-welcome__art{display:grid;justify-items:center;gap:6px;margin:var(--space-10,40px) auto var(--space-8)}
-.k-welcome__art > div{display:flex;gap:6px}
+.k-welcome__art{display:grid;justify-items:center;gap:0;margin:84px auto var(--space-8)}
+.k-welcome__art > div{display:flex;gap:4px}
+.k-welcome__art .k-fbrick{--h:54px}
 .k-fbrick{position:relative;display:inline-block;height:calc(var(--h,48px));border-radius:8px;background:var(--b2);box-shadow:inset 0 -6px 0 var(--b3);margin-top:10px}
 .k-fbrick i{position:absolute;top:-9px;width:22%;height:12px;border-radius:4px 4px 0 0;background:var(--b2)}
 .k-fbrick i:nth-child(1){left:14%}
@@ -465,7 +466,7 @@ a.k-erow:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
 
 /* 3D brick */
 .k-brick--red{--b1:var(--red-400);--b2:var(--red-500);--b3:var(--red-700)}
-.k-brick--yellow{--b1:var(--yellow-300);--b2:var(--yellow-400);--b3:var(--yellow-600)}
+.k-brick--yellow{--b1:var(--yellow-400);--b2:var(--yellow-500);--b3:var(--yellow-700)}
 .k-brick--green{--b1:var(--green-400);--b2:var(--green-500);--b3:var(--green-700)}
 .k-brick--blue{--b1:var(--blue-400);--b2:var(--blue-500);--b3:var(--blue-700)}
 .k-brick{position:relative;width:100%;perspective:900px;display:grid;place-items:center;touch-action:pan-y;user-select:none}
