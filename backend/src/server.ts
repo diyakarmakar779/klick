@@ -61,6 +61,7 @@ import { AiError } from "./ai/client.js";
 import { analyzeMemory, draftFollowUp, draftFollowUpById, eventPeopleDetail, eventPeopleSummary, saveSuggestion, suggestMatches } from "./services/ai.js";
 import { continueAiChat, deleteAiChat, directThread, getAiChat, listChats, listEventAiChats, startAiChat } from "./services/chat.js";
 import { sendDirectMessage } from "./db/repos/dm.js";
+import { loadDemoFor } from "./services/demo.js";
 import { CALENDAR_SCOPE, fetchCalendarEvents } from "./lib/googleCalendar.js";
 import { clientMetadataDocument, fetchLumaEvents, finishLumaAuth, startLumaAuth } from "./lib/lumaMcp.js";
 import { newState, saveOAuthState, takeOAuthState } from "./db/repos/oauthStates.js";
@@ -195,6 +196,8 @@ export function buildServer() {
         (await listSourceConnections(req.memberId)).map(({ tokenRef: _t, ...s }) => s),
       );
       api.post("/sources/mock_luma/connect", async (req) => {
+        // In the demo deployment this also adds sample Klicks, a request, a note and messages to try every feature.
+        if (process.env.DEMO_DATA === "1") return { imported: (await loadDemoFor(req.memberId)).events };
         await createSourceConnection(req.memberId, "mock_luma", ["events:read:self"], null);
         const ids = await importEvents(req.memberId, "mock_luma", mockLumaEvents(req.memberId));
         return { imported: ids.length };

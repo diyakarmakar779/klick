@@ -16,6 +16,7 @@ export const COLLECTIONS = {
   saves: "saves", // private bookmarks: people a member wants to remember to meet at an event
   savedEvents: "savedEvents", // private bookmarks of Discover events, `${ownerId}__${eventId}`
   aiChats: "aiChats", // Klick AI chats, one owner each, about one event; messages in a subcollection
+  demoState: "demoState", // when the sample members were last refreshed (DEMO_DATA only)
   dmThreads: "dmThreads", // direct messages between two accepted Klicks, keyed by connection id; messages in a subcollection
 } as const;
 

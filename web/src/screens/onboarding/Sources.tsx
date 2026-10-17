@@ -47,7 +47,7 @@ export default function Sources() {
     run("demo", async () => {
       const { imported } = await Api.joinDemoEvents();
       setConnected((c) => ({ ...c, mock_luma: true }));
-      return `Added ${imported} demo events with sample attendees.`;
+      return `Added ${imported} demo events, with sample Klicks, a request and messages.`;
     });
   const next = () => run("next", async () => setMe(await Api.finishIntegrations()));
   const any = Object.keys(connected).length > 0;

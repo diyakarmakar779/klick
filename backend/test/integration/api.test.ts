@@ -634,3 +634,34 @@ describe("chats", () => {
     expect((await call("asha", "GET", "/v1/chats")).body).toEqual([]);
   });
 });
+
+describe("demo data", () => {
+  it("Demo events gives a member Klicks going, a request, a private note, messages and a Discover event", async () => {
+    process.env.DEMO_DATA = "1";
+    try {
+      await call("judge", "PUT", "/v1/me", { displayName: "Judge" });
+      expect((await call("judge", "POST", "/v1/sources/mock_luma/connect")).body.imported).toBe(2);
+      await call("judge", "POST", "/v1/sources/mock_luma/connect"); // twice is harmless
+      const klicks = (await call("judge", "GET", "/v1/connections?status=accepted")).body;
+      expect(klicks.map((k: { other: { id: string } }) => k.other.id).sort()).toEqual(["demo-meera", "demo-ravi", "demo-sana"]);
+      expect((await call("judge", "GET", "/v1/connections?status=pending")).body).toHaveLength(1);
+      const chats = (await call("judge", "GET", "/v1/chats")).body;
+      expect(chats.map((c: { title: string; unread: number }) => [c.title, c.unread])).toEqual(expect.arrayContaining([["Meera Iyer", 2], ["Ravi Patil", 1]]));
+      expect((await call("judge", "GET", "/v1/memories")).body).toHaveLength(1);
+      expect((await call("judge", "GET", "/v1/followups")).body).toHaveLength(1);
+      const discover = (await call("judge", "GET", "/v1/discover")).body;
+      expect(discover.map((d: { event: { title: string } }) => d.event.title)).toContain("Women in Cloud Pune: Build with Gemini");
+      const devfest = (await call("judge", "GET", "/v1/events")).body.find((e: { event: { title: string } }) => e.event.title.startsWith("DevFest"));
+      const page = (await call("judge", "GET", `/v1/events/${devfest.event.id}`)).body;
+      expect(page.catchUp.map((c: { profile: { id: string } }) => c.profile.id).sort()).toEqual(["demo-meera", "demo-ravi", "demo-sana"]);
+      expect(page.effectiveVisibility).toBe("hidden"); // the judge's own choice stays theirs
+      // The hidden sample member never shows up anywhere.
+      await call("judge", "PUT", `/v1/events/${devfest.event.id}/visibility`, { visibility: "confirmed_attendees" });
+      const after = (await call("judge", "GET", `/v1/events/${devfest.event.id}`)).body;
+      expect(after.alsoGoing.map((p: { id: string }) => p.id)).not.toContain("demo-dev");
+      expect(after.alsoGoing.length).toBeGreaterThan(5);
+    } finally {
+      delete process.env.DEMO_DATA;
+    }
+  }, 60000);
+});

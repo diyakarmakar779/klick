@@ -42,5 +42,26 @@ export function mockLumaEvents(memberId: string, now = new Date()): ImportedEven
       state: h % 2 === 0 ? "attended" : "registered",
       stateRef: h % 2 === 0 ? `checkin:${memberId}` : undefined,
     },
+    // Only demo members are going, so a judge finds it through Discover (where their Klicks are going).
+    ...(memberId.startsWith("demo-")
+      ? [
+          {
+            externalId: "evt-women-in-cloud-pune",
+            title: "Women in Cloud Pune: Build with Gemini",
+            description: "Hands-on evening of Gemini and Firebase demos, with lightning talks from first-time speakers.",
+            startsAt: new Date(now.getTime() + 9 * day),
+            endsAt: new Date(now.getTime() + 9 * day + 3 * 60 * 60 * 1000),
+            timezone: "Asia/Kolkata",
+            venue: { name: "Thoughtworks Pune", city: "Pune", online: false },
+            url: "https://lu.ma/wic-pune-gemini",
+            category: "Meetup",
+            tags: ["AI", "Community", "Inclusion"],
+            coverImageUrl: null,
+            organizerName: "Women in Cloud Pune",
+            guestCount: 120,
+            state: "registered" as const,
+          },
+        ]
+      : []),
   ];
 }
