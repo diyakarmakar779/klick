@@ -125,7 +125,7 @@ export async function eventPeopleDetail(memberId: string, mine: EventMembership)
           const metAt = c.eventId ? await getEvent(c.eventId) : null;
           return {
             connectionId: c.id,
-            profile: publicProfile(other),
+            profile: publicProfile(other, true),
             memory: latest
               ? { kind: latest.kind, reviewed: latest.reviewState === "reviewed", text: latest.reviewState === "reviewed" ? latest.text : null }
               : null,
