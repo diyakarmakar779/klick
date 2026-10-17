@@ -3,9 +3,9 @@ import { ArrowLeft } from "lucide-react";
 import { Api, type OnboardingStep } from "../../lib/api";
 import { useMe } from "../../lib/me";
 
-export const TOTAL = 6;
+export const TOTAL = 5;
 
-// One onboarding screen: back arrow, "Step n of 6" with six bars, title, subtitle, body and a footer pinned low.
+// One onboarding screen: back arrow, "Step n of 5" with a bar per step, title, subtitle, body and a footer pinned low.
 export default function Flow({
   step,
   onBack,

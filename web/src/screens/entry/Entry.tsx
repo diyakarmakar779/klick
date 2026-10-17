@@ -75,7 +75,6 @@ export default function Entry() {
   const signup = screen === "signup";
   return (
     <Flow
-      step={signup ? 1 : undefined}
       onBack={() => show("welcome")}
       title={signup ? "Create your account" : "Welcome back"}
       sub={signup ? "Use your Google account. You review what's shared before anyone sees anything." : "Sign in with the Google account you used before."}

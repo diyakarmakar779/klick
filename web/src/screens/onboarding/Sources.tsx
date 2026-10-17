@@ -8,7 +8,7 @@ import Flow, { FlowError, useGo } from "./Flow";
 
 type Busy = "calendar" | "luma" | "demo" | "next" | null;
 
-// Step 6, last: connect where your events live. Klick reads only events you're part of, never guest lists.
+// Step 4: connect where your events live. Klick reads only events you're part of, never guest lists.
 export default function Sources() {
   const { setMe } = useMe();
   const { go } = useGo();
@@ -74,9 +74,9 @@ export default function Sources() {
 
   return (
     <Flow
-      step={6}
-      onBack={() => go("discoverability")}
-      title="Connect an event source"
+      step={4}
+      onBack={() => go("identity")}
+      title="Where do your events live?"
       sub="Klick finds your events from a source you authorise. Start with one, add more later."
       foot={
         <>

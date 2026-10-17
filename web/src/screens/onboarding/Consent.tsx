@@ -1,6 +1,4 @@
 import { CalendarDays, Eye, Lock, Send } from "lucide-react";
-import { signOut } from "firebase/auth";
-import { auth } from "../../lib/firebase";
 import Button from "../../ui/Button";
 import Flow, { FlowError, useGo } from "./Flow";
 
@@ -17,13 +15,13 @@ export default function Consent() {
   return (
     <Flow
       step={2}
-      onBack={() => signOut(auth)}
+      onBack={() => go("account")}
       title="You decide what Klick sees and shares"
       sub="Four things to know before you set up your profile."
       foot={
         <>
           <FlowError>{error}</FlowError>
-          <Button variant="primary" size="lg" loading={busy} onClick={() => go("block")}>
+          <Button variant="primary" size="lg" loading={busy} onClick={() => go("identity")}>
             I understand, continue
           </Button>
           <a className="k-onb__link" href="/privacy.html">

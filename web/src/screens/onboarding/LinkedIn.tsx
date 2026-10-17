@@ -14,7 +14,7 @@ function linkedinUsername(input: string): string {
 }
 const VALID = /^[A-Za-z0-9-]{3,100}$/;
 
-// Step 4: their Klick badge, and the LinkedIn link it carries. The link is self-reported and kept
+// Step 3: their Klick badge, and the LinkedIn link it carries. The link is self-reported and kept
 // as a private contact detail; Klick never looks anyone up on LinkedIn.
 export default function LinkedIn({ me }: { me: Me }) {
   const { go, busy, error, setError } = useGo();
@@ -24,15 +24,15 @@ export default function LinkedIn({ me }: { me: Me }) {
 
   function save() {
     if (!VALID.test(username)) return setError("Use your profile link, like linkedin.com/in/your-name.");
-    return go("profile", async () => {
+    return go("integrations", async () => {
       if (username.toLowerCase() !== me.linkedinProfile?.username) await Api.linkedinUsername(username);
     });
   }
 
   return (
     <Flow
-      step={4}
-      onBack={() => go("block")}
+      step={3}
+      onBack={() => go("consent")}
       title="Add your LinkedIn"
       sub="It goes on your Klick badge. People see it only if you share it after you both accept."
       foot={
@@ -41,7 +41,7 @@ export default function LinkedIn({ me }: { me: Me }) {
           <Button variant="primary" size="lg" loading={busy} disabled={!value.trim() || invalid || busy} onClick={save}>
             Continue
           </Button>
-          <button type="button" className="k-onb__link" disabled={busy} onClick={() => go("profile")}>
+          <button type="button" className="k-onb__link" disabled={busy} onClick={() => go("integrations")}>
             Skip for now
           </button>
         </>
