@@ -59,6 +59,7 @@ export const Api = {
   linkedinCallback: (code: string, state: string) =>
     api<{ candidate: LinkedInCandidate }>("/v1/onboarding/linkedin/callback", { method: "POST", body: { code, state } }),
   linkedinConfirm: (isMe: boolean) => api<Me>("/v1/onboarding/linkedin/confirm", { method: "POST", body: { isMe } }),
+  linkedinUsername: (username: string) => api<Me>("/v1/onboarding/linkedin/username", { method: "PUT", body: { username } }),
   joinDemoEvents: () => api<{ imported: number }>("/v1/sources/mock_luma/connect", { method: "POST" }),
   setVisibility: (eventId: string, visibility: Visibility | null) =>
     api(`/v1/events/${eventId}/visibility`, { method: "PUT", body: { visibility } }),
@@ -246,6 +247,7 @@ export interface Me {
   defaultVisibility: Visibility;
   contact: Partial<Record<ContactField, string>>;
   linkedin: (LinkedInCandidate & { confirmedAt: string }) | null;
+  linkedinProfile: { username: string; url: string; source: "self_reported"; addedAt: string } | null;
   questionnaire: Questionnaire | null;
   onboarding: { step: "identity" | "integrations" | "questionnaire" | "done"; completedAt: string | null };
 }

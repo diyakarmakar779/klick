@@ -51,6 +51,7 @@ function previewMe(step: string): Me {
     defaultVisibility: "hidden",
     contact: { email: "diya@example.com" },
     linkedin: null,
+    linkedinProfile: null,
     questionnaire: null,
     onboarding: { step: (["identity", "integrations", "questionnaire"].includes(step) ? step : "done") as Me["onboarding"]["step"], completedAt: null },
   };
