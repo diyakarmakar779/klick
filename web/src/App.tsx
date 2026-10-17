@@ -5,7 +5,6 @@ import AppShell from "./layout/AppShell";
 import Entry from "./screens/entry/Entry";
 import Home from "./screens/Home";
 import Profile from "./screens/Profile";
-import Dev from "./screens/Dev";
 import Callback from "./screens/Callback";
 import Onboarding from "./screens/onboarding/Onboarding";
 import Events from "./screens/events/Events";
@@ -49,7 +48,6 @@ function Signedin() {
           <Route path="k/:token" element={<QrLanding />} />
           <Route path="settings" element={<Navigate to="/profile" replace />} />
           <Route path="profile" element={<Profile />} />
-          <Route path="dev" element={<Dev />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       )}

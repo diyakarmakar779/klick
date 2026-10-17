@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { CalendarDays, Home, MessageCircle, QrCode, Settings, User, Users } from "lucide-react";
 import Block from "../ui/Block";
@@ -44,7 +45,11 @@ function Sidebar({ rail }: { rail?: boolean }) {
 export default function AppShell() {
   const [home, events, chat, profile] = ITEMS;
   // A chat thread is full screen: its composer sits where the bottom nav would be.
-  const thread = /^\/chats\/(ai|c)\/|^\/events\/[^/]+\/ask$/.test(useLocation().pathname);
+  const { pathname } = useLocation();
+  const thread = /^\/chats\/(ai|c)\/|^\/events\/[^/]+\/ask$/.test(pathname);
+  // Each new screen starts at the top.
+  const main = useRef<HTMLDivElement>(null);
+  useEffect(() => main.current?.scrollTo(0, 0), [pathname]);
   const link = ({ to, label, icon: Icon, end }: (typeof ITEMS)[number]) => (
     <NavLink to={to} end={end}>
       <Icon className="pd-i" aria-hidden="true" />
@@ -57,7 +62,7 @@ export default function AppShell() {
         <Sidebar rail />
         <Sidebar />
       </div>
-      <div className="k-main">
+      <div className="k-main" ref={main}>
         <main className="k-scroll">
           <Outlet />
         </main>
