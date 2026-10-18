@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, Users } from "lucide-react";
+import { Plus, Search, Users } from "lucide-react";
 import Header from "../../layout/Header";
 import Alert from "../../ui/Alert";
 import Button from "../../ui/Button";
@@ -35,10 +35,16 @@ export default function Chats() {
       <Header
         title="Chats"
         action={
-          <Link to="/klicks" className="pd-btn pd-btn--ghost pd-btn--sm">
-            <Users className="pd-i" aria-hidden="true" />
-            Klicks
-          </Link>
+          <span className="k-header__actions">
+            <Link to="/chats/new" className="pd-btn pd-btn--primary pd-btn--sm">
+              <Plus className="pd-i" aria-hidden="true" />
+              New
+            </Link>
+            <Link to="/klicks" className="pd-btn pd-btn--ghost pd-btn--sm">
+              <Users className="pd-i" aria-hidden="true" />
+              Klicks
+            </Link>
+          </span>
         }
       />
       <div className="pd-page k-stack">

@@ -90,17 +90,19 @@ export function ConnectedRow({ item, here = false }: { item: CatchUp; here?: boo
   const name = profile.displayName;
   const metLine = here ? `Klicked here, ${dayMonthYear(met.at)}` : `Klicked ${met.eventTitle ? `at ${met.eventTitle}, ` : ""}${monthYear(met.at)}`;
   return (
-    <article className="k-prow">
+    <article className="k-prow k-prow--linked">
+      <Link to={`/klicks/${item.connectionId}`} className="k-card-link" aria-label={`Open ${name}'s profile`} />
       <div className="k-prow__who">
-        <Link to={`/klicks/${item.connectionId}`} className="k-prow__link">
+        <div className="k-prow__link">
           <span className="pd-avatar k-avatar--klicked">{initials(name)}</span>
           <div className="k-grow">
             <h4>{name}</h4>
             {roleLine(profile) && <p>{roleLine(profile)}</p>}
           </div>
-        </Link>
-        <Link to={`/klicks/${item.connectionId}`} className="pd-btn pd-btn--outline pd-btn--icon" aria-label={`Open your Klick with ${name}`}>
+        </div>
+        <Link to={`/chats/c/${item.connectionId}`} className="pd-btn pd-btn--outline k-card-action" aria-label={`Chat with ${name}`}>
           <MessageCircle className="pd-i" aria-hidden="true" />
+          Chat
         </Link>
       </div>
       {memory && !memory.reviewed && (

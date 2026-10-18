@@ -1,17 +1,19 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, Send } from "lucide-react";
 import Header from "../layout/Header";
 import Block from "../ui/Block";
 import EventCard, { EventRow } from "../ui/EventCard";
 import SectionHead from "../ui/SectionHead";
 import ShareSheet from "../ui/ShareSheet";
+import WelcomeBlocks from "../ui/WelcomeBlocks";
 import { RecommendedRow } from "../ui/PersonRow";
 import { Api, type Match, type MyEvent } from "../lib/api";
 import { useLoad } from "../lib/useLoad";
 import { canBeMatched, dayLong, isPast } from "../lib/eventFormat";
 import { dueLabel } from "../lib/followups";
 import { firstName, initials } from "../lib/people";
+import { useMe } from "../lib/me";
 
 // The top suggestion for the member's next event they can be found at. Same reciprocal rule
 // as the event page: nothing shows unless the member is going and visible there too.
@@ -83,6 +85,7 @@ function WorthMeetingNext({ item }: { item: MyEvent }) {
 }
 
 export default function Home() {
+  const { me } = useMe();
   const { data } = useLoad(() => Api.events());
   const fus = useLoad(() => Api.followUps());
   const klicks = useLoad(() => Api.connections("accepted"));
@@ -104,6 +107,14 @@ export default function Home() {
     <>
       <Header title="Home" />
       <div className="pd-page k-stack k-home">
+        <WelcomeBlocks name={me?.displayName ?? "there"} className="k-home__welcome" subtitle={null}>
+          <Link to="/chats/new" className="k-new-chat__composer k-home__composer" aria-label="Start a new chat">
+            <span className="k-home__composer-placeholder">Ask anything</span>
+            <span className="pd-btn pd-btn--primary pd-btn--icon" aria-hidden="true">
+              <Send className="pd-i" />
+            </span>
+          </Link>
+        </WelcomeBlocks>
         {due.length > 0 && (
           <section>
             <SectionHead title="Follow up" />

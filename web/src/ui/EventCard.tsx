@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { BookmarkCheck, Check, ChevronRight, CircleCheck, Clock, Image as ImageIcon, User, Users } from "lucide-react";
+import { BookmarkCheck, Check, ChevronRight, CircleCheck, Clock, Image as ImageIcon, MessageCircle, User, Users } from "lucide-react";
 import type { DiscoverItem, KlickEvent, MyEvent, PeopleSignal } from "../lib/api";
 import { canBeMatched, dateLine, isPast } from "../lib/eventFormat";
 
@@ -51,6 +51,7 @@ function CardView({
   catchUp,
   prep,
   saved,
+  chatTo,
 }: {
   event: KlickEvent;
   to: string;
@@ -60,10 +61,12 @@ function CardView({
   catchUp: PeopleSignal | null;
   prep: string | null;
   saved?: boolean;
+  chatTo?: string;
 }) {
   const b = badge ? BADGE[badge] : null;
   return (
-    <Link to={to} className="k-ecard">
+    <article className="k-ecard">
+      <Link to={to} className="k-card-link" aria-label={`Open ${event.title}`} />
       <div className={`k-ecard__poster${past ? " k-ecard__poster--past" : ""}`}>
         {event.coverImageUrl ? (
           <img src={event.coverImageUrl} alt="" loading="lazy" />
@@ -100,7 +103,13 @@ function CardView({
           {prep}
         </span>
       )}
-    </Link>
+      {chatTo && (
+        <Link to={chatTo} className="pd-btn pd-btn--outline pd-btn--sm k-card-action k-ecard__chat">
+          <MessageCircle className="pd-i" aria-hidden="true" />
+          Ask Klick AI
+        </Link>
+      )}
+    </article>
   );
 }
 
@@ -112,7 +121,7 @@ export default function EventCard({ item }: { item: MyEvent }) {
   // Worth meeting is about who to meet next, so a past card only shows the people you know.
   const worth = past ? null : people.worthMeeting.count > 0 ? people.worthMeeting : null;
   const catchUp = people.catchUp.count > 0 ? people.catchUp : null;
-  return <CardView event={event} to={`/events/${event.id}`} past={past} badge={badge} worth={worth} catchUp={catchUp} prep={prep} />;
+  return <CardView event={event} to={`/events/${event.id}`} past={past} badge={badge} worth={worth} catchUp={catchUp} prep={prep} chatTo={`/events/${event.id}/ask`} />;
 }
 
 // Discover card: no status (it isn't yours yet). Worth meeting is a count only, shown when it's big enough.
