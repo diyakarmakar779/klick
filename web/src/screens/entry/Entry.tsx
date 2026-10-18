@@ -5,7 +5,6 @@ import { auth, googleProvider } from "../../lib/firebase";
 import Brick from "../../ui/Brick";
 import Button from "../../ui/Button";
 import Flow, { FlowError } from "../onboarding/Flow";
-import klickLogo from "../../assets/klick-logo.png";
 
 type Screen = "welcome" | "signup" | "signin";
 
@@ -38,7 +37,7 @@ export default function Entry() {
     return (
       <div className="k-flow k-onb">
         <div className="pd-page pd-page--narrow">
-          <img className="k-welcome__art" src={klickLogo} alt="Klick" width={240} height={240} />
+          <img className="k-signin__splash" src="/assets/klick-splash-screen.png" alt="Klick. Meet. Klick. Build." />
           <h1 className="display" style={{ marginTop: "auto" }}>
             Meet someone. Klick with intention.
           </h1>

@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { CalendarDays, Check, ChevronRight, Info, Sparkles, Ticket } from "lucide-react";
+import { Check, ChevronRight, Info, Sparkles } from "lucide-react";
 import { Api, ApiError } from "../../lib/api";
 import { useMe } from "../../lib/me";
 import { connectCalendar, startRedirect } from "../../lib/sources";
 import Button from "../../ui/Button";
+import ProviderLogo, { type ProviderId } from "../../ui/ProviderLogo";
 import Flow, { FlowError, useGo } from "./Flow";
 
 type Busy = "calendar" | "luma" | "demo" | "next" | null;
@@ -52,10 +53,10 @@ export default function Sources() {
   const next = () => run("next", async () => setMe(await Api.finishIntegrations()));
   const any = Object.keys(connected).length > 0;
 
-  const row = (key: string, Icon: typeof CalendarDays, title: string, body: string, action: () => void, which: Busy) => (
+  const row = (key: string, provider: ProviderId | null, title: string, body: string, action: () => void, which: Busy) => (
     <button type="button" className="k-srcrow" disabled={connected[key] || !!busy} onClick={action}>
       <span className="k-source__icon">
-        <Icon className="pd-i" aria-hidden="true" />
+        {provider ? <ProviderLogo provider={provider} /> : <Sparkles className="pd-i" aria-hidden="true" />}
       </span>
       <span className="k-grow">
         {title}
@@ -97,9 +98,9 @@ export default function Sources() {
       }
     >
       <div className="k-onb__body">
-        {row("google_calendar", CalendarDays, "Google Calendar", "Read-only. Flights and reminders are skipped.", calendar, "calendar")}
-        {row("luma_mcp", Ticket, "Luma", "Events you're hosting or registered for.", luma, "luma")}
-        {row("mock_luma", Sparkles, "Demo events", "Try Klick with sample events and people.", demo, "demo")}
+        {row("google_calendar", "google_calendar", "Google Calendar", "Read-only. Flights and reminders are skipped.", calendar, "calendar")}
+        {row("luma_mcp", "luma", "Luma", "Events you're hosting or registered for.", luma, "luma")}
+        {row("mock_luma", null, "Demo events", "Try Klick with sample events and people.", demo, "demo")}
         {note && (
           <p className="k-caption" role="status">
             {note}
