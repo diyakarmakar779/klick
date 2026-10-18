@@ -29,6 +29,7 @@ import BlockQr from "../ui/BlockQr";
 import SectionHead from "../ui/SectionHead";
 import Sheet from "../ui/Sheet";
 import SettingSwitch from "../ui/Switch";
+import ProviderLogo from "../ui/ProviderLogo";
 import { EventRow } from "../ui/EventCard";
 import { Api, ApiError, type Me } from "../lib/api";
 import { useMe } from "../lib/me";
@@ -245,6 +246,7 @@ function AccountsSheet({ me, sources, onSynced, onClose }: { me: Me; sources: So
     <Sheet title="Connected accounts" description="Klick reads only events you're part of, never guest lists." onClose={onClose}>
       <div className="k-accounts">
         <div className="k-account">
+          <ProviderLogo provider="linkedin" />
           <span className="k-grow">
             <b>LinkedIn</b>
             <small>{me.linkedin ? "Verified, it's really you" : "Not connected"}</small>
@@ -252,6 +254,7 @@ function AccountsSheet({ me, sources, onSynced, onClose }: { me: Me; sources: So
           {me.linkedin && <BadgeCheck className="pd-i k-account__ok" aria-label="Connected" />}
         </div>
         <div className="k-account">
+          <ProviderLogo provider="google_calendar" />
           <span className="k-grow">
             <b>Google Calendar</b>
             <small>{status(cal)}</small>
@@ -272,6 +275,7 @@ function AccountsSheet({ me, sources, onSynced, onClose }: { me: Me; sources: So
           </Button>
         </div>
         <div className="k-account">
+          <ProviderLogo provider="luma" />
           <span className="k-grow">
             <b>Luma</b>
             <small>{status(luma)}</small>

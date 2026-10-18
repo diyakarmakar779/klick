@@ -46,10 +46,11 @@ a{color:inherit}
 .k-empty p{color:var(--muted-foreground);max-width:36ch}
 
 /* Full-screen centred flow (sign-in, onboarding) */
-.k-flow{min-height:100dvh;display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top,0px) + var(--space-8)) 0 calc(env(safe-area-inset-bottom,0px) + var(--space-6))}
+.k-flow{height:100dvh;min-height:0;overflow-y:auto;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top,0px) + var(--space-8)) 0 calc(env(safe-area-inset-bottom,0px) + var(--space-6))}
 .k-flow .pd-page{flex:1;display:flex;flex-direction:column}
 .k-flow__foot{margin-top:auto;display:grid;gap:var(--space-3);padding-top:var(--space-8)}
 .k-flow__foot .pd-btn{width:100%}
+.k-signin__splash{display:block;width:100%;height:auto;aspect-ratio:1526/657;object-fit:contain;align-self:center}
 
 .k-spinner{display:grid;place-items:center;min-height:50dvh;color:var(--muted-foreground)}
 
@@ -75,6 +76,17 @@ a.pd-btn{text-decoration:none}
 .k-source{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-4);border:1px solid var(--border);border-radius:var(--radius-xl)}
 .k-source + .k-source{margin-top:var(--space-3)}
 .k-source__icon{width:40px;height:40px;border-radius:var(--radius-lg);background:var(--muted);display:grid;place-items:center;flex:none}
+.k-provider-logo{display:grid;place-items:center;overflow:hidden;flex:none;border-radius:10px;background:#fff;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);color:#171717;font-weight:800;line-height:1}
+.k-provider-logo--md{width:40px;height:40px}
+.k-provider-logo--sm{width:24px;height:24px;border-radius:6px;font-size:10px}
+.k-provider-logo img{display:block;width:100%;height:100%;object-fit:contain}
+.k-provider-logo--linkedin img{object-fit:cover}
+.k-provider-logo--linkedin{background:#0a66c2;color:#fff}
+.k-provider-logo--linkedin>span{font-size:18px;font-weight:800;letter-spacing:-.08em;transform:translateX(-1px)}
+.k-provider-logo--sm.k-provider-logo--linkedin>span{font-size:12px}
+.k-provider-logo--google_calendar{padding:5px}
+.k-provider-logo--luma{border-radius:10px}
+.k-source__icon>.k-provider-logo{width:40px;height:40px}
 .k-source__body{flex:1;min-width:0}
 .k-source__body b{display:block;font-size:15px}
 .k-source__body small{display:block;font-size:13px;color:var(--muted-foreground)}
