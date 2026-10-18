@@ -4,23 +4,69 @@ Klick helps people meet the right people at events they're already going to, rem
 
 Members connect Google Calendar and Luma, see which of their Klicks are going, get Gemini suggestions for who to meet and why, exchange contact details by QR only when both people accept, keep private memories, and get a nudge to reconnect. Built for the AI Builder Cup 2026 (Sustainability & Social Impact).
 
-- Live app: https://hey-os-511517.web.app
-- Architecture, data model and privacy rules: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
-- How suggestions are ranked: [`docs/RECOMMENDATIONS.md`](docs/RECOMMENDATIONS.md)
+| | |
+|---|---|
+| Live app | https://hey-os-511517.web.app (sign in with Google, then choose **Demo events**) |
+| API health | https://event-networking-api-smqzajwk5q-el.a.run.app/health |
+| Step-by-step guide to every feature | [`docs/GUIDE.md`](docs/GUIDE.md) |
+| Architecture, data model, privacy rules, AI design | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) |
+| How suggestions are ranked | [`docs/RECOMMENDATIONS.md`](docs/RECOMMENDATIONS.md) |
+| Roadmap and next integrations | [`docs/ROADMAP.md`](docs/ROADMAP.md) |
 
 The Google Cloud project keeps its original id (`hey-os-511517`), so that appears in the app's URL and config.
 
-## How it uses Google Cloud
+## Architecture
 
-| Service | What Klick uses it for |
+![Klick architecture: the web app on Firebase Hosting calls one Cloud Run API, which reads Firestore and Cloud Storage, calls Gemini on Vertex AI, and imports the member's own events from Google Calendar and Luma](docs/architecture.png)
+
+The browser talks only to the Cloud Run API, sending a Firebase ID token with every request. Firestore rules deny all direct client access. Every permission, visibility and consent rule is deterministic code in `backend/src/domain` and `backend/src/db/repos`, covered by tests. Gemini only ranks and writes; it never decides who can see what.
+
+## How Klick uses Firebase, Firestore, Cloud Run and Gemini
+
+### Firebase
+
+- **Hosting** serves the React 19 + Vite web app (`web/`, built to `web/dist`, deployed with `firebase deploy --only hosting`). Single-page rewrites are in `firebase.json`.
+- **Authentication** handles Google sign-in in the browser (`web/src/lib/firebase.ts`). The API verifies the ID token on every request with the Firebase Admin SDK (`backend/src/lib/auth.ts`) and uses the uid as the member id. The Calendar scope (`calendar.events.readonly`) is asked for only when the member connects Calendar, and its access token is used once and never stored.
+
+### Firestore (Native mode, asia-south1)
+
+- **What it holds.** Members, events, event memberships, Klicks (`connections`), memories, follow-ups, QR tokens, saves, Klick AI chats, direct-message threads and more. They are defined once in `backend/src/db/schema.ts` as Zod schemas.
+- **Validated writes.** Every write is validated against its schema before it is stored. Accepting, declining, revoking and blocking a Klick run in transactions, so consent changes can't race.
+- **One record per real event.** An event is identified by the provider's id (Calendar `iCalUID`, Luma event id) or a shared lu.ma link, deduplicated through `eventSourceRefs`.
+- **Indexes and rules.** Composite indexes and a 768-dimension vector index on `members.embedding` are in `backend/firestore.indexes.json`. `backend/firestore.rules` denies all client reads and writes.
+
+### Cloud Run
+
+- **The API.** One service, `event-networking-api`: Node 22, Fastify 5 and Zod, deployed from source by `infra/gcp-setup.sh`. It runs with 1 vCPU, 512 MiB, up to 3 instances, and scales to zero. It runs as its own least-privilege service account, with no key files.
+- **Enforced in code.** Everything the product promises is enforced here: no guest-list endpoint, member counts floored at "fewer than 3", reciprocal visibility for suggestions, contact details only after both people accept, "attended" only from a provider check-in, and owner-only memories and chats.
+- **Uploads.** It signs short-lived Cloud Storage upload URLs for voice notes, which go to a private bucket under `members/{uid}/`.
+- **Secrets and jobs.** Secrets come from Secret Manager at deploy time. An optional Cloud Scheduler job calls `POST /jobs/reconnect` hourly to raise follow-up reminders.
+- **Logs.** Each Gemini call writes one structured `gemini_call` log line with task, model, prompt version, attempt, latency and outcome, never content.
+
+### Gemini on Vertex AI
+
+Klick calls a Gemini Flash model on the global Vertex AI endpoint through the Google Gen AI SDK (`@google/genai`), configured by `GEMINI_MODEL`. Shared mechanics live in `backend/src/ai/client.ts`:
+- The Zod schema is sent as `responseJsonSchema`, and the result is re-validated with Zod, with one retry. Temperature is 0.3.
+- Untrusted text goes in labelled data blocks, with a rule to never follow instructions inside them.
+
+| Task | Input | Output | Guardrails | If Gemini fails |
+|---|---|---|---|---|
+| Who to meet (`match.rank`) | Your profile and goal, plus up to 20 eligible candidates who chose to be findable | Up to 5 people, each with a reason, evidence pairs and a conversation starter | Candidates filtered by code before the call; invented ids dropped; evidence kept only if both phrases appear in the supplied facts | Deterministic overlap ranking, marked as not AI |
+| Voice or text note to memory (`memory.extract`) | Text, or audio straight from Cloud Storage (`gs://`) | Transcript, summary, topics, promises, follow-up reason and days | Owner only; saved as a draft until the member reviews it | Retryable error; memory unchanged |
+| Follow-up draft (`reconnect.draft`) | Follow-up reason and the owner's own memories | Why now, plus a draft message | Only the owner's memories; Klick must still be accepted; never sent automatically | Follow-up stays open with a retry |
+| Klick AI event chat (`chat.answer`) | Question, last 10 turns, and permission-checked context (your Klicks going, findable people, Discover events) | Text, people, events, sources, suggestions | Ids outside the supplied lists dropped; people re-checked on every read; never sees contact details | Error shown with retry; nothing saved |
+
+## Quality and performance
+
+Measured 17 Oct 2026:
+
+| What | Result |
 |---|---|
-| Firebase Hosting | The web app (React + Vite), mobile-first |
-| Firebase Authentication | Google sign-in |
-| Cloud Run | The API (Node 22, Fastify, TypeScript), the only way into the data |
-| Firestore | Members, events, Klicks, memories, follow-ups, chats |
-| Gemini on Vertex AI | Who to meet and why, turning notes and voice into memories, follow-up drafts, and Klick AI chat about an event, all with schema-checked output |
-| Cloud Storage | Private voice notes and photos, uploaded with signed URLs |
-| Secret Manager, Cloud Scheduler | Secrets, and an optional hourly reconnection job |
+| Automated tests (Vitest on the Firestore emulator, run in CI on every pull request) | 50 of 50 pass |
+| Lighthouse, welcome screen, mobile, simulated slow 4G | Accessibility 100, Performance 81, Best practices 96; largest paint 3.7 s |
+| Web app download | 220 KB JavaScript gzipped; the 3D QR (136 KB) loads only when shown |
+| Gemini, who to meet (46 live calls) | Median 10.8 s |
+| Gemini, voice note to memory (3 live calls) | Median 5.5 s |
 
 ## Layout
 
@@ -40,13 +86,15 @@ backend/                 Node 22 + TypeScript + Fastify, deployed to Cloud Run
 web/                     React + TypeScript + Vite, deployed to Firebase Hosting
 design/                  The Prod :D design system the web app is built from
 infra/gcp-setup.sh       One-time Google Cloud setup and deploy
-docs/                    Architecture and recommendations
+docs/                    Architecture, recommendations, step-by-step guide, roadmap
 .github/                 CI (backend tests on the Firestore emulator, web lint and build) and PR template
 ```
 
 ## Try it
 
 Sign in with Google at https://hey-os-511517.web.app and finish onboarding. To see every feature with data in it, choose **Demo events** in the "Where do your events live?" onboarding step (or later from Profile, Connected accounts). It adds two sample events, three Klicks you met at a past meetup, one pending request, a private note with a follow-up, and a few messages. Sample people are clearly fictional and use `example.com` addresses.
+
+For a walkthrough of every feature, including the QR exchange with a second account, see [`docs/GUIDE.md`](docs/GUIDE.md).
 
 ## Run locally
 
