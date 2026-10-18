@@ -669,3 +669,13 @@ describe("demo data", () => {
     }
   }, 60000);
 });
+
+describe("older member records", () => {
+  it("fills in fields added after a member was saved, so their profile can still be shown", async () => {
+    const { getDb } = await import("../../src/db/firestore.js");
+    const { getMember, publicProfile } = await import("../../src/db/repos/members.js");
+    await getDb().collection("members").doc("old-kiran").set({ id: "old-kiran", displayName: "Kiran", role: "Designer", company: "Acme", createdAt: new Date(), updatedAt: new Date() });
+    const m = await getMember("old-kiran");
+    expect(publicProfile(m!)).toMatchObject({ displayName: "Kiran", role: "Designer", company: "Acme", location: "", interests: [] });
+  });
+});
