@@ -18,6 +18,7 @@ import QrLanding from "./screens/qr/QrLanding";
 import Chats from "./screens/chat/Chats";
 import AiChat from "./screens/chat/AiChat";
 import DirectChat from "./screens/chat/DirectChat";
+import NewChat from "./screens/chat/NewChat";
 
 function Signedin() {
   const { me, error } = useMe();
@@ -41,6 +42,7 @@ function Signedin() {
           <Route path="klicks/:connectionId" element={<Person />} />
           <Route path="events/:eventId/ask" element={<AiChat />} />
           <Route path="chats" element={<Chats />} />
+          <Route path="chats/new" element={<NewChat />} />
           <Route path="chats/ai/:chatId" element={<AiChat />} />
           <Route path="chats/c/:connectionId" element={<DirectChat />} />
           <Route path="qr" element={<Navigate to="/profile?qr=1" replace />} />
