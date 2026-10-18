@@ -1,5 +1,5 @@
 import { getDb, fromFirestore } from "../firestore.js";
-import { COLLECTIONS, Member } from "../schema.js";
+import { COLLECTIONS, Member, SharingDefaults } from "../schema.js";
 
 export const MemberInput = Member.pick({
   displayName: true,
@@ -25,7 +25,11 @@ const col = () => getDb().collection(COLLECTIONS.members);
 
 export async function getMember(id: string): Promise<Member | null> {
   const snap = await col().doc(id).get();
-  return snap.exists ? fromFirestore<Member>(snap.data()!) : null;
+  if (!snap.exists) return null;
+  // Members saved before a field existed (such as sharing) get its default, so readers can rely on it.
+  const raw = fromFirestore<Member>(snap.data()!);
+  const parsed = Member.safeParse(raw);
+  return parsed.success ? parsed.data : { ...raw, sharing: raw.sharing ?? SharingDefaults.parse({}), interests: raw.interests ?? [] };
 }
 
 export async function upsertMember(id: string, input: MemberInput): Promise<Member> {
