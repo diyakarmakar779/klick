@@ -346,7 +346,7 @@ a.pd-btn{text-decoration:none}
   .k-welcome h1{font-size:38px}
   .k-welcome p{font-size:15px}
   .k-home__welcome{min-height:clamp(420px,50vw,620px)}
-  .k-new-chat__suggestions{justify-content:center;width:100%;margin-left:0;padding:0}
+  .k-new-chat__suggestions{justify-content:flex-start;width:100%;margin-left:0;padding:0}
   .k-new-chat__composer{margin:12px 0 0}
   .k-new-chat__error{margin:12px 0 0}
 }
